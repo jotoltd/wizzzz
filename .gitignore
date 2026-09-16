@@ -1,0 +1,19 @@
+# Devin local config (may contain secrets)
+.devin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local

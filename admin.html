@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WIZZZ · Admin</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <!-- LOGIN -->
+  <section id="login" class="login">
+    <div class="login-card">
+      <img src="logo.svg" alt="WIZZZ" class="login-logo" />
+      <h1 class="login-title">Admin</h1>
+      <p class="login-sub">Sign in to manage clients & projects.</p>
+      <form id="loginForm" class="login-form">
+        <label>
+          <span>Email</span>
+          <input type="email" id="email" required autocomplete="username" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" id="password" required autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+        <p id="loginError" class="form-error" hidden></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="topbar-left">
+        <img src="logo.svg" alt="WIZZZ" class="topbar-logo" />
+        <span class="topbar-tag">Admin</span>
+      </div>
+      <div class="topbar-right">
+        <span id="userEmail" class="user-email"></span>
+        <button id="logoutBtn" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="clients">Clients</button>
+      <button class="tab" data-tab="projects">Projects</button>
+    </nav>
+
+    <main class="panel">
+      <!-- CLIENTS -->
+      <section id="clientsPanel" class="tab-panel active">
+        <div class="panel-head">
+          <h2 class="panel-title">Clients</h2>
+          <button class="btn btn-primary btn-sm" id="addClientBtn">+ Add client</button>
+        </div>
+        <div id="clientsList" class="grid"></div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section id="projectsPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Projects</h2>
+          <button class="btn btn-primary btn-sm" id="addProjectBtn">+ Add project</button>
+        </div>
+        <div id="projectsList" class="grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- CLIENT MODAL -->
+  <div id="clientModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 id="clientModalTitle" class="modal-title">Add client</h3>
+      <form id="clientForm" class="modal-form">
+        <input type="hidden" id="clientId" />
+        <label><span>Name</span><input type="text" id="cName" required /></label>
+        <label><span>Company</span><input type="text" id="cCompany" /></label>
+        <label><span>Email</span><input type="email" id="cEmail" /></label>
+        <label><span>Phone</span><input type="text" id="cPhone" /></label>
+        <label><span>Status</span>
+          <select id="cStatus">
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <label><span>Notes</span><textarea id="cNotes" rows="3"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PROJECT MODAL -->
+  <div id="projectModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 id="projectModalTitle" class="modal-title">Add project</h3>
+      <form id="projectForm" class="modal-form">
+        <input type="hidden" id="projectId" />
+        <label><span>Title</span><input type="text" id="pTitle" required /></label>
+        <label><span>Client</span>
+          <select id="pClient" required></select>
+        </label>
+        <label><span>Type</span>
+          <select id="pType">
+            <option value="">—</option>
+            <option value="website">Website</option>
+            <option value="ios">iOS App</option>
+            <option value="ads">Ads</option>
+          </select>
+        </label>
+        <label><span>Status</span>
+          <select id="pStatus">
+            <option value="planning">Planning</option>
+            <option value="in_progress">In progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <label><span>Budget (£)</span><input type="number" id="pBudget" min="0" step="50" /></label>
+        <label><span>Due date</span><input type="date" id="pDue" /></label>
+        <label><span>Brief</span><textarea id="pBrief" rows="3"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

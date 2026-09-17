@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WIZZZ Brand Guidelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --orange: #ff4d00;
+    --red: #d6141f;
+    --ember: #ffb347;
+    --flame: #ff8a00;
+    --ink: #0a0604;
+    --paper: #fff7f2;
+    --muted: rgba(255, 247, 242, 0.6);
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html, body {
+    font-family: "Space Grotesk", sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 20mm;
+    page-break-after: always;
+    page-break-inside: avoid;
+    position: relative;
+    background: var(--ink);
+  }
+  .page:last-child { page-break-after: auto; }
+
+  /* Cover */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: radial-gradient(ellipse at 30% 20%, rgba(255,138,0,0.15), transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(214,20,31,0.15), transparent 50%),
+                var(--ink);
+  }
+  .cover-logo {
+    font-family: "Metamorphous", serif;
+    font-size: 90px;
+    letter-spacing: 6px;
+    background: linear-gradient(90deg, var(--ember), var(--flame), var(--orange), var(--red));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 24px;
+  }
+  .cover-title {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 50px;
+  }
+  .cover-meta {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  /* Section headers */
+  .section-num {
+    font-family: "Metamorphous", serif;
+    font-size: 13px;
+    color: var(--flame);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: "Metamorphous", serif;
+    font-size: 38px;
+    margin-bottom: 28px;
+    background: linear-gradient(90deg, var(--ember), var(--flame), var(--orange), var(--red));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .section-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--paper);
+    max-width: 155mm;
+    margin-bottom: 28px;
+  }
+
+  /* Logo showcase */
+  .logo-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .logo-tile {
+    background: rgba(255, 247, 242, 0.04);
+    border: 1px solid rgba(255, 247, 242, 0.1);
+    border-radius: 12px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72mm;
+    height: 30mm;
+  }
+  .logo-tile.dark { background: #000; }
+  .logo-tile.light { background: #fff7f2; }
+  .logo-tile img { max-width: 60mm; max-height: 18mm; }
+  .logo-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .logo-cell { display: flex; flex-direction: column; align-items: center; }
+
+  /* Colour swatches */
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 247, 242, 0.1);
+  }
+  .swatch-color { height: 22mm; }
+  .swatch-info { padding: 10px; background: rgba(255, 247, 242, 0.04); }
+  .swatch-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+  .swatch-hex { font-size: 11px; color: var(--muted); font-family: monospace; }
+
+  /* Typography */
+  .type-sample { margin-bottom: 28px; }
+  .type-label {
+    font-size: 11px;
+    color: var(--flame);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+  .type-display {
+    font-family: "Metamorphous", serif;
+    font-size: 48px;
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, var(--ember), var(--flame), var(--orange), var(--red));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .type-body-sample {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--paper);
+    max-width: 120mm;
+  }
+  .type-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* Usage rules */
+  .rules-list { list-style: none; counter-reset: rules; }
+  .rules-list li {
+    counter-increment: rules;
+    padding: 14px 0 14px 40px;
+    border-bottom: 1px solid rgba(255, 247, 242, 0.08);
+    position: relative;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .rules-list li::before {
+    content: counter(rules, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 14px;
+    font-family: "Metamorphous", serif;
+    color: var(--flame);
+    font-size: 16px;
+  }
+
+  /* Gradient bar */
+  .gradient-bar {
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--ember), var(--flame), var(--orange), var(--red));
+    margin-bottom: 12px;
+  }
+  .gradient-stops {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: monospace;
+  }
+
+  .footer-note {
+    position: relative;
+    margin-top: 20mm;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  code { color: var(--flame); }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="page cover">
+  <div class="cover-logo">WIZZZ</div>
+  <div class="cover-title">Brand Guidelines</div>
+  <div class="cover-meta">
+    A trading name of Gedker Ltd<br>
+    hello@wizzz.co.uk<br>
+    wizzz.co.uk
+  </div>
+</div>
+
+<!-- LOGO -->
+<div class="page">
+  <div class="section-num">01</div>
+  <h1 class="section-title">The Logo</h1>
+  <p class="section-body">
+    The WIZZZ wordmark is the core of the brand. It uses Metamorphous, a gothic
+    display face, with a continuous ember-to-red gradient flowing across the
+    word. The font is embedded in the SVG so it renders identically everywhere.
+  </p>
+
+  <div class="logo-row">
+    <div class="logo-cell">
+      <div class="logo-tile"><img src="../logo.svg" alt="WIZZZ gradient"></div>
+      <div class="logo-label">Primary (gradient)</div>
+    </div>
+    <div class="logo-cell">
+      <div class="logo-tile dark"><img src="logos/wizzz-wordmark-white.svg" alt="WIZZZ white"></div>
+      <div class="logo-label">Monochrome (white)</div>
+    </div>
+  </div>
+
+  <div class="logo-row">
+    <div class="logo-cell">
+      <div class="logo-tile light"><img src="logos/wizzz-wordmark-black.svg" alt="WIZZZ black"></div>
+      <div class="logo-label">Monochrome (black)</div>
+    </div>
+    <div class="logo-cell">
+      <div class="logo-tile"><img src="logos/wizzz-wmark-gradient.svg" alt="W mark gradient"></div>
+      <div class="logo-label">W Mark (gradient)</div>
+    </div>
+  </div>
+
+  <p class="section-body" style="font-size:12px;color:var(--muted)">
+    Use the gradient version wherever possible. Use white on dark backgrounds
+    or single-colour print. Use black on light print. Use the W mark for
+    favicons, app icons and any space too small for the full wordmark.
+  </p>
+
+  <div class="footer-note">
+    <span>WIZZZ Brand Guidelines</span>
+    <span>01 / Logo</span>
+  </div>
+</div>
+
+<!-- COLOUR -->
+<div class="page">
+  <div class="section-num">02</div>
+  <h1 class="section-title">Colour</h1>
+  <p class="section-body">
+    The WIZZZ palette is fire. Ember to flame to orange to red. The gradient
+    is the signature. Use it boldly.
+  </p>
+
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#ffb347"></div>
+      <div class="swatch-info"><div class="swatch-name">Ember</div><div class="swatch-hex">#ffb347</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#ff8a00"></div>
+      <div class="swatch-info"><div class="swatch-name">Flame</div><div class="swatch-hex">#ff8a00</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#ff4d00"></div>
+      <div class="swatch-info"><div class="swatch-name">Orange</div><div class="swatch-hex">#ff4d00</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#d6141f"></div>
+      <div class="swatch-info"><div class="swatch-name">Red</div><div class="swatch-hex">#d6141f</div></div>
+    </div>
+  </div>
+
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0a0604"></div>
+      <div class="swatch-info"><div class="swatch-name">Ink</div><div class="swatch-hex">#0a0604</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#fff7f2"></div>
+      <div class="swatch-info"><div class="swatch-name">Paper</div><div class="swatch-hex">#fff7f2</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:rgba(255,247,242,0.12)"></div>
+      <div class="swatch-info"><div class="swatch-name">Line</div><div class="swatch-hex">rgba(255,247,242,0.12)</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:rgba(255,247,242,0.6)"></div>
+      <div class="swatch-info"><div class="swatch-name">Muted</div><div class="swatch-hex">rgba(255,247,242,0.6)</div></div>
+    </div>
+  </div>
+
+  <p class="section-body" style="font-size:12px;color:var(--muted);margin-top:16px">
+    Ink is the background. Paper is the text. The four fire colours form the
+    gradient. Line and Muted are for borders and secondary text.
+  </p>
+
+  <h3 style="font-family:'Metamorphous',serif;font-size:20px;margin:20px 0 12px">The Gradient</h3>
+  <div class="gradient-bar"></div>
+  <div class="gradient-stops">
+    <span>0% #ffb347</span>
+    <span>33% #ff8a00</span>
+    <span>66% #ff4d00</span>
+    <span>100% #d6141f</span>
+  </div>
+
+  <div class="footer-note">
+    <span>WIZZZ Brand Guidelines</span>
+    <span>02 / Colour</span>
+  </div>
+</div>
+
+<!-- TYPOGRAPHY -->
+<div class="page">
+  <div class="section-num">03</div>
+  <h1 class="section-title">Typography</h1>
+
+  <div class="type-sample">
+    <div class="type-label">Display — Metamorphous</div>
+    <div class="type-display">WE BUILD BOLD THINGS</div>
+    <div class="type-meta">Google Fonts · Used for headings, logo, and all display type</div>
+  </div>
+
+  <div class="type-sample">
+    <div class="type-label">Body — Space Grotesk</div>
+    <div class="type-body-sample">
+      Space Grotesk carries all body copy, UI labels, navigation, and
+      supporting text. It is geometric but warm, and holds its own next to
+      Metamorphous without competing. Weights: 400, 500, 600, 700.
+    </div>
+    <div class="type-meta">Google Fonts · Used for body, UI, and all non-display text</div>
+  </div>
+
+  <p class="section-body" style="font-size:12px;color:var(--muted);margin-top:24px">
+    Never use Metamorphous for body copy. It is a display face only. Never use
+    Space Grotesk for the logo or major headings. The pairing is deliberate.
+  </p>
+
+  <div class="footer-note">
+    <span>WIZZZ Brand Guidelines</span>
+    <span>03 / Typography</span>
+  </div>
+</div>
+
+<!-- USAGE RULES -->
+<div class="page">
+  <div class="section-num">04</div>
+  <h1 class="section-title">Usage Rules</h1>
+
+  <ol class="rules-list">
+    <li>Always use the official SVG logo files. Do not recreate the wordmark in text or with a different font.</li>
+    <li>The gradient must flow continuously across the word, not restart inside each letter.</li>
+    <li>Keep clear space around the logo equal to the height of the W on all sides.</li>
+    <li>Never stretch, skew, or rotate the logo.</li>
+    <li>Never change the gradient colours or stop positions.</li>
+    <li>Never place the gradient logo on a busy background without sufficient contrast. Use the white version instead.</li>
+    <li>Never add drop shadows, outlines, or effects to the logo.</li>
+    <li>The W mark is for small spaces only (favicons, app icons, avatars). Do not use it as a primary logo.</li>
+    <li>Minimum logo size: 120px wide for the wordmark, 32px for the W mark.</li>
+    <li>WIZZZ is always uppercase. Always with three Zs.</li>
+  </ol>
+
+  <div class="footer-note">
+    <span>WIZZZ Brand Guidelines</span>
+    <span>04 / Usage</span>
+  </div>
+</div>
+
+<!-- ASSETS -->
+<div class="page">
+  <div class="section-num">05</div>
+  <h1 class="section-title">Assets</h1>
+
+  <p class="section-body">
+    All assets are in the <code>brand-pack/</code> folder:
+  </p>
+
+  <ul style="list-style:none;font-size:14px;line-height:2;color:var(--paper)">
+    <li><strong style="color:var(--flame)">logos/</strong> — SVG and PNG exports of all six logo variants</li>
+    <li><strong style="color:var(--flame)">fonts/</strong> — Metamorphous and Space Grotesk WOFF2 files</li>
+    <li><strong style="color:var(--flame)">social-banner-*</strong> — LinkedIn, Twitter/X, Instagram banners</li>
+    <li><strong style="color:var(--flame)">og-image.png</strong> — 1200×630 social preview card</li>
+    <li><strong style="color:var(--flame)">email-signature.html</strong> — HTML email signature</li>
+    <li><strong style="color:var(--flame)">letterhead-template.html</strong> — Proposal/quote/invoice template</li>
+    <li><strong style="color:var(--flame)">brand-sting.html</strong> — Animated logo reveal for video</li>
+    <li><strong style="color:var(--flame)">WIZZZ-Business-Card.pdf</strong> — Print-ready business card</li>
+    <li><strong style="color:var(--flame)">WIZZZ-Brand-Guidelines.pdf</strong> — This document</li>
+  </ul>
+
+  <h3 style="font-family:'Metamorphous',serif;font-size:20px;margin:24px 0 10px">Logo files</h3>
+  <ul style="list-style:none;font-size:12px;line-height:1.8;color:var(--muted);font-family:monospace">
+    <li>wizzz-wordmark-gradient / white / black — SVG + PNG (200, 512, 1024)</li>
+    <li>wizzz-wmark-gradient / white / black — SVG + PNG (200, 512, 1024)</li>
+    <li>favicon-16 / 32 / 48 / 180.png + favicon.ico</li>
+  </ul>
+
+  <h3 style="font-family:'Metamorphous',serif;font-size:20px;margin:24px 0 10px">Font files</h3>
+  <ul style="list-style:none;font-size:12px;line-height:1.8;color:var(--muted);font-family:monospace">
+    <li>Metamorphous-Regular.woff2</li>
+    <li>SpaceGrotesk-Variable.woff2</li>
+  </ul>
+
+  <p class="section-body" style="font-size:12px;color:var(--muted);margin-top:20px">
+    Both fonts are also available from Google Fonts. The WOFF2 files are
+    included for offline use and embedding.
+  </p>
+
+  <div class="footer-note">
+    <span>WIZZZ Brand Guidelines · A trading name of Gedker Ltd</span>
+    <span>05 / Assets</span>
+  </div>
+</div>
+
+</body>
+</html>

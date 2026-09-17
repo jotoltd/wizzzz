@@ -25,6 +25,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 </head>
 <body>
   <!-- animated gradient backdrop -->
@@ -37,6 +42,7 @@
 
   <!-- cursor glow -->
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+  <div class="cursor-flame" id="cursorFlame" aria-hidden="true"></div>
 
   <!-- nav -->
   <header class="nav">
@@ -52,10 +58,10 @@
   <main id="top">
     <!-- HERO -->
     <section class="hero">
-      <h1 class="hero-title reveal">
-        <span class="line">WE BUILD</span>
-        <span class="line gradient-text">BOLD THINGS</span>
-        <span class="line">THAT MOVE.</span>
+      <h1 class="hero-title">
+        <span class="line hero-anim" style="--d:0">WE BUILD</span>
+        <span class="line gradient-text hero-anim" style="--d:1">BOLD THINGS</span>
+        <span class="line hero-anim" style="--d:2">THAT MOVE.</span>
       </h1>
       <p class="hero-sub reveal">
         Websites. iOS apps. Ad campaigns. I run WIZZZ end to end.
@@ -145,22 +151,348 @@
       </div>
     </section>
 
-    <!-- WORK (real slots, no fake clients) -->
+    <!-- PORTFOLIO -->
     <section class="work" id="work">
-      <h2 class="section-title reveal">SELECTED WORK</h2>
+      <h2 class="section-title reveal">WHAT I'VE BUILT</h2>
       <div class="work-grid">
-        <a href="#contact" class="work-slot reveal">
-          <span class="work-tag">Your project</span>
-          <span class="work-cta">Let's build it →</span>
-        </a>
-        <a href="#contact" class="work-slot reveal">
-          <span class="work-tag">Your project</span>
-          <span class="work-cta">Let's build it →</span>
-        </a>
-        <a href="#contact" class="work-slot reveal">
-          <span class="work-tag">Your project</span>
-          <span class="work-cta">Let's build it →</span>
-        </a>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/pitterpotter.png" alt="Pitter Potter website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Pitter Potter</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A full booking platform for a paint-your-own pottery studio with
+              two locations in Putney and Wimbledon. I built the whole thing
+              end to end: session booking with a live calendar, gift cards,
+              party and events packages, baby print bookings, a price list,
+              a gallery, and an admin area so they manage everything
+              themselves. Supabase handles auth, the database, and edge
+              functions for the admin side.
+            </p>
+            <div class="work-features">
+              <span>Session booking</span>
+              <span>Live calendar</span>
+              <span>Gift cards</span>
+              <span>Party packages</span>
+              <span>Baby print bookings</span>
+              <span>Gallery</span>
+              <span>Price list</span>
+              <span>Admin CMS</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Supabase</span>
+              <span>Framer Motion</span><span>Vercel</span>
+            </div>
+            <a href="https://www.pitterpotter.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/jm2tiling.png" alt="JM² Tiling Co website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">JM² Tiling Co</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A lead-generating site for a professional tiling company covering
+              Surrey and West Sussex. I built the whole thing: a project
+              gallery, a quote request form with image uploads, service pages
+              for floor, wall, bathroom and regrouting work, contact with
+              WhatsApp and click-to-call, and a map of areas covered. Built
+              to bring in enquiries, not just look pretty.
+            </p>
+            <div class="work-features">
+              <span>Project gallery</span>
+              <span>Quote form</span>
+              <span>Image uploads</span>
+              <span>WhatsApp click-to-chat</span>
+              <span>Click-to-call</span>
+              <span>Areas map</span>
+              <span>Service pages</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Framer Motion</span>
+              <span>Vercel</span>
+            </div>
+            <a href="https://www.jm2tilingco.com" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/monkeyingaround.png" alt="Monkeying Around website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Monkeying Around</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A booking site for kids' holiday camps. I built the whole thing:
+              session booking with a live calendar, age group selection,
+              sibling discounts, checkout and payment, venue and location
+              pages with maps, activity breakdowns for indoor and outdoor
+              sports and crafts, and a parent area. Designed to make booking
+              a child's place quick and painless.
+            </p>
+            <div class="work-features">
+              <span>Session booking</span>
+              <span>Live calendar</span>
+              <span>Checkout & payment</span>
+              <span>Sibling discounts</span>
+              <span>Age group selection</span>
+              <span>Venue maps</span>
+              <span>Activity pages</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Framer Motion</span>
+              <span>Google Maps</span><span>Vercel</span>
+            </div>
+            <a href="https://www.monkeyingaround.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/lrso.png" alt="LRSO website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">LRSO Ltd</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A facility lettings and management platform for schools and
+              sports clubs across England. I built the booking system,
+              facility and pitch listings, availability calendar, client
+              accounts and admin dashboard, invoicing, and enquiry forms.
+              Schools list their halls, courts and pitches; the community
+              books them online. Supabase handles auth, data and edge
+              functions, with Resend for transactional email.
+            </p>
+            <div class="work-features">
+              <span>Facility booking</span>
+              <span>Availability calendar</span>
+              <span>Client accounts</span>
+              <span>Admin dashboard</span>
+              <span>Invoicing</span>
+              <span>Enquiry forms</span>
+              <span>Pitch & court listings</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Supabase</span>
+              <span>Framer Motion</span><span>Resend</span><span>Vercel</span>
+            </div>
+            <a href="https://www.lrso.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/theslimestudio.png" alt="The Slime Studio website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">The Slime Studio</h3>
+              <span class="work-tag">Website + Shop</span>
+            </div>
+            <p class="work-card-desc">
+              A site and online shop for a hands-on slime-making studio in
+              Holt, Norfolk. I built the whole thing: workshop session
+              booking with a live calendar, a full shop with cart and Stripe
+              checkout for DIY kits, handmade slimes and accessories,
+              party bookings, a gallery, and contact. Supabase handles
+              auth and data, Stripe takes the payments, all on Next.js
+              with server-side rendering for fast loads and SEO.
+            </p>
+            <div class="work-features">
+              <span>Workshop booking</span>
+              <span>Live calendar</span>
+              <span>Online shop</span>
+              <span>Stripe checkout</span>
+              <span>Cart & products</span>
+              <span>Party bookings</span>
+              <span>Gallery</span>
+            </div>
+            <div class="work-stack">
+              <span>Next.js</span><span>React</span><span>Supabase</span>
+              <span>Stripe</span><span>Vercel</span>
+            </div>
+            <a href="https://www.theslimestudio.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/citysafelocksmith.png" alt="Citysafe Locksmith website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Citysafe Locksmith</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A 24/7 emergency locksmith site for London. I built the whole
+              thing: emergency call-to-action with click-to-call and WhatsApp,
+              service pages for lockouts, lock changes, repairs, UPVC doors,
+              windows, safes, auto and commercial work, a quote form, areas
+              covered map, reviews, and a gallery. Built to convert visitors
+              into calls fast, with a mobile-first layout for people locked
+              out on their phone.
+            </p>
+            <div class="work-features">
+              <span>24/7 emergency CTA</span>
+              <span>Click-to-call</span>
+              <span>WhatsApp</span>
+              <span>Quote form</span>
+              <span>Areas map</span>
+              <span>Service pages</span>
+              <span>Reviews</span>
+              <span>Gallery</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Framer Motion</span>
+              <span>Vercel</span>
+            </div>
+            <a href="https://www.citysafelocksmith.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/highlifegames.png" alt="Highlife Games website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Highlife Games</h3>
+              <span class="work-tag">Website + Game</span>
+            </div>
+            <p class="work-card-desc">
+              A coming-soon site for an interactive educational quiz game
+              with real prizes. I built the landing page, the auth flow
+              with login and signup, a referral system, an animated canvas
+              background, how-to-play and asset category sections, an
+              advertisers section, FAQs, and a contact form. Supabase
+              handles auth and data, Resend does transactional email,
+              and Square is wired up for prizes. Ages 14+.
+            </p>
+            <div class="work-features">
+              <span>Auth & signup</span>
+              <span>Referral system</span>
+              <span>Animated canvas</span>
+              <span>Quiz game concept</span>
+              <span>Real prizes</span>
+              <span>Advertiser section</span>
+              <span>FAQs</span>
+              <span>Contact form</span>
+            </div>
+            <div class="work-stack">
+              <span>Vanilla JS</span><span>Supabase</span><span>Resend</span>
+              <span>Square</span><span>Canvas API</span><span>Vercel</span>
+            </div>
+            <a href="https://www.highlifegames.com" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/higherheights.png" alt="Higher Heights Roofing website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Higher Heights Roofing</h3>
+              <span class="work-tag">Website</span>
+            </div>
+            <p class="work-card-desc">
+              A site for a master trade roofer in Leeds and West Yorkshire.
+              I built the whole thing: service pages for tiling, pointing,
+              flat roofs, slates, chimneys, gutters and lead work, a drone
+              inspection showcase, before and after gallery, quote and
+              enquiry forms with WhatsApp and click-to-call, areas covered
+              map, and reviews. Built to bring in leads and show off the
+              craft, with motion and a dark, premium feel.
+            </p>
+            <div class="work-features">
+              <span>Drone inspections</span>
+              <span>Service pages</span>
+              <span>Before & after gallery</span>
+              <span>Quote form</span>
+              <span>WhatsApp</span>
+              <span>Click-to-call</span>
+              <span>Areas map</span>
+              <span>Reviews</span>
+            </div>
+            <div class="work-stack">
+              <span>React 19</span><span>Tailwind</span><span>Supabase</span>
+              <span>Lucide</span><span>Netlify</span>
+            </div>
+            <a href="https://higherheightsroofing.co.uk" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
+        <article class="work-card reveal">
+          <div class="work-card-shot">
+            <img src="screenshots/jonnycarrcue.png" alt="Jonny Carr Cue website" loading="lazy" />
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-head">
+              <h3 class="work-card-title">Jonny Carr Cue</h3>
+              <span class="work-tag">Raffle Platform</span>
+            </div>
+            <p class="work-card-desc">
+              A raffle platform for a custom handmade snooker and pool cue
+              maker. I built the whole thing: ticket purchases with PayPal,
+              user accounts and auth, live draw and winner selection,
+              a product gallery of the cues up for grabs, an about the
+              maker story, session and event bookings, reviews, and
+              contact. Supabase handles auth and data, Resend does the
+              email, all wrapped in a clean, craft-led design with a
+              handwritten display font.
+            </p>
+            <div class="work-features">
+              <span>Raffle ticket sales</span>
+              <span>PayPal payments</span>
+              <span>User accounts</span>
+              <span>Live draw</span>
+              <span>Winner selection</span>
+              <span>Cue gallery</span>
+              <span>Session bookings</span>
+              <span>Reviews</span>
+            </div>
+            <div class="work-stack">
+              <span>React</span><span>Vite</span><span>Supabase</span>
+              <span>PayPal</span><span>Resend</span><span>Vercel</span>
+            </div>
+            <a href="https://www.jonnycarrcue.com" target="_blank" rel="noopener" class="work-link">
+              Visit site →
+            </a>
+          </div>
+        </article>
+
       </div>
     </section>
 
@@ -170,15 +502,15 @@
       <p class="contact-sub reveal">
         Got a project? An idea? A half-finished plan? Send it over.
       </p>
-      <a href="mailto:hello@wizzz.studio" class="btn btn-primary btn-big reveal">
-        hello@wizzz.studio
+      <a href="mailto:hello@wizzz.co.uk" class="btn btn-primary btn-big reveal">
+        hello@wizzz.co.uk
       </a>
     </section>
   </main>
 
   <footer class="footer">
     <div class="footer-left"><img src="logo.svg" alt="WIZZZ" class="logo-img" /></div>
-    <div class="footer-right">© <span id="year"></span> · I'm Josh. With you all the way.</div>
+    <div class="footer-right">© <span id="year"></span> WIZZZ<br><span class="footer-trading">A trading name of Gedker Ltd</span></div>
   </footer>
 
   <script src="script.js"></script>

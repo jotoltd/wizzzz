@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — WIZZZ</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .error-code {
+    font-family: "Metamorphous", serif;
+    font-size: clamp(80px, 18vw, 200px);
+    line-height: 1;
+    background: linear-gradient(90deg, var(--ember), var(--flame), var(--orange), var(--red));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 20px;
+    animation: flicker 3s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.92; filter: brightness(1.1); }
+  }
+  .error-msg {
+    font-size: 1.3rem;
+    color: var(--paper);
+    margin-bottom: 12px;
+  }
+  .error-sub {
+    color: var(--muted);
+    margin-bottom: 40px;
+    max-width: 400px;
+  }
+  .error-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .error-logo {
+    margin-bottom: 30px;
+  }
+  .error-logo img { height: 50px; }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+</div>
+
+<div class="error-page">
+  <div class="error-logo"><img src="logo.svg" alt="WIZZZ" /></div>
+  <div class="error-code">404</div>
+  <p class="error-msg">This page went up in flames.</p>
+  <p class="error-sub">The page you're looking for doesn't exist or has moved. Let's get you back.</p>
+  <div class="error-actions">
+    <a href="/" class="btn btn-primary">Back to WIZZZ</a>
+    <a href="/#contact" class="btn btn-ghost">Get in touch</a>
+  </div>
+</div>
+</body>
+</html>

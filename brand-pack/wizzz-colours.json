@@ -1,0 +1,33 @@
+{
+  "name": "WIZZZ",
+  "description": "WIZZZ brand colour palette - A trading name of Gedker Ltd",
+  "colors": [
+    {"name": "Ember",  "hex": "#ffb347", "rgb": [255, 179, 71], "usage": "Gradient stop 1"},
+    {"name": "Flame",  "hex": "#ff8a00", "rgb": [255, 138, 0], "usage": "Gradient stop 2"},
+    {"name": "Orange", "hex": "#ff4d00", "rgb": [255, 77, 0],  "usage": "Gradient stop 3"},
+    {"name": "Red",    "hex": "#d6141f", "rgb": [214, 20, 31], "usage": "Gradient stop 4"},
+    {"name": "Ink",    "hex": "#0a0604", "rgb": [10, 6, 4],    "usage": "Background"},
+    {"name": "Paper",  "hex": "#fff7f2", "rgb": [255, 247, 242], "usage": "Text on dark"},
+    {"name": "Line",   "hex": "rgba(255,247,242,0.12)", "usage": "Borders"},
+    {"name": "Muted",  "hex": "rgba(255,247,242,0.60)", "usage": "Secondary text"}
+  ],
+  "gradient": {
+    "type": "linear",
+    "angle": 90,
+    "css": "linear-gradient(90deg, #ffb347 0%, #ff8a00 33.33%, #ff4d00 66.67%, #d6141f 100%)",
+    "stops": [
+      {"offset": 0,      "color": "#ffb347"},
+      {"offset": 33.33,  "color": "#ff8a00"},
+      {"offset": 66.67,  "color": "#ff4d00"},
+      {"offset": 100,    "color": "#d6141f"}
+    ]
+  },
+  "fonts": {
+    "display": "Metamorphous",
+    "body": "Space Grotesk"
+  },
+  "contact": {
+    "email": "hello@wizzz.co.uk",
+    "web": "wizzz.co.uk"
+  }
+}

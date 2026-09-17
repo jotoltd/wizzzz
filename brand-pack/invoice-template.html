@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WIZZZ Invoice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Space Grotesk", sans-serif;
+    color: #0a0604;
+    background: #fff;
+    padding: 40px 60px;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .letterhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 3px solid;
+    border-image: linear-gradient(90deg, #ffb347, #ff8a00, #ff4d00, #d6141f) 1;
+    margin-bottom: 32px;
+  }
+  .letterhead-logo {
+    font-family: "Metamorphous", serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #ffb347, #ff8a00, #ff4d00, #d6141f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .letterhead-meta {
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .invoice-title {
+    font-family: "Metamorphous", serif;
+    font-size: 28px;
+    color: #ff4d00;
+    margin-bottom: 24px;
+  }
+  .parties {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+  .party { line-height: 1.7; }
+  .party-label {
+    font-family: "Metamorphous", serif;
+    font-size: 11px;
+    color: #ff4d00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .party strong { color: #0a0604; }
+  .invoice-meta {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 32px;
+    font-size: 13px;
+    padding: 16px 20px;
+    background: #fff7f2;
+    border-left: 3px solid #ff4d00;
+  }
+  .invoice-meta div { line-height: 1.6; }
+  .invoice-meta strong { color: #0a0604; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 600; }
+  .invoice-meta span { font-size: 15px; font-weight: 600; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  th {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #ff4d00;
+    color: #0a0604;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  th.right { text-align: right; }
+  td { padding: 14px 12px; border-bottom: 1px solid #eee; }
+  td.right { text-align: right; }
+  .totals {
+    width: 280px;
+    margin-left: auto;
+    font-size: 14px;
+  }
+  .totals td { padding: 8px 12px; border: none; }
+  .totals td.right { text-align: right; font-weight: 500; }
+  .totals .subtotal-row td { border-top: 1px solid #eee; }
+  .totals .vat-row td { color: #666; }
+  .totals .total-row td {
+    border-top: 2px solid #ff4d00;
+    border-bottom: 2px solid #ff4d00;
+    font-family: "Metamorphous", serif;
+    font-size: 18px;
+    padding: 14px 12px;
+  }
+  .payment {
+    margin-top: 40px;
+    padding: 20px;
+    background: #fff7f2;
+    border-left: 3px solid #ff4d00;
+    font-size: 13px;
+  }
+  .payment h3 {
+    font-family: "Metamorphous", serif;
+    font-size: 14px;
+    color: #ff4d00;
+    margin-bottom: 8px;
+  }
+  .payment p { margin-bottom: 4px; }
+  .payment strong { color: #0a0604; }
+  .notes {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.7;
+  }
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+  }
+  @media print { body { padding: 30px 40px; } }
+</style>
+</head>
+<body>
+
+<div class="letterhead">
+  <div class="letterhead-logo">WIZZZ</div>
+  <div class="letterhead-meta">
+    hello@wizzz.co.uk<br>
+    wizzz.co.uk<br>
+    A trading name of Gedker Ltd
+  </div>
+</div>
+
+<div class="invoice-title">INVOICE</div>
+
+<div class="parties">
+  <div class="party">
+    <div class="party-label">From</div>
+    <strong>WIZZZ</strong><br>
+    A trading name of Gedker Ltd<br>
+    hello@wizzz.co.uk<br>
+    wizzz.co.uk
+  </div>
+  <div class="party">
+    <div class="party-label">Bill To</div>
+    <strong>[Client Name]</strong><br>
+    [Client Company]<br>
+    [Client Address]<br>
+    [Client Email]
+  </div>
+</div>
+
+<div class="invoice-meta">
+  <div><strong>Invoice No.</strong><span>[INV-0001]</span></div>
+  <div><strong>Issue Date</strong><span>[DD/MM/YYYY]</span></div>
+  <div><strong>Due Date</strong><span>[DD/MM/YYYY]</span></div>
+</div>
+
+<table>
+  <tr>
+    <th>Description</th>
+    <th class="right">Qty</th>
+    <th class="right">Rate</th>
+    <th class="right">Amount</th>
+  </tr>
+  <tr>
+    <td>[Service or deliverable description]</td>
+    <td class="right">[1]</td>
+    <td class="right">[£0.00]</td>
+    <td class="right">[£0.00]</td>
+  </tr>
+  <tr>
+    <td>[Service or deliverable description]</td>
+    <td class="right">[1]</td>
+    <td class="right">[£0.00]</td>
+    <td class="right">[£0.00]</td>
+  </tr>
+</table>
+
+<table class="totals">
+  <tr class="subtotal-row">
+    <td>Subtotal</td>
+    <td class="right">[£0.00]</td>
+  </tr>
+  <tr class="vat-row">
+    <td>VAT (20%)</td>
+    <td class="right">[£0.00]</td>
+  </tr>
+  <tr class="total-row">
+    <td>Total Due</td>
+    <td class="right">[£0.00]</td>
+  </tr>
+</table>
+
+<div class="payment">
+  <h3>Payment Details</h3>
+  <p><strong>Bank:</strong> [Bank name]</p>
+  <p><strong>Name:</strong> Gedker Ltd</p>
+  <p><strong>Sort Code:</strong> [00-00-00]</p>
+  <p><strong>Account:</strong> [00000000]</p>
+  <p><strong>Reference:</strong> [INV-0001]</p>
+</div>
+
+<div class="notes">
+  Payment due within [14] days of issue date. Late payments may incur charges at [statutory rate]. Please include the invoice number as payment reference. Made with fire by WIZZZ.
+</div>
+
+<div class="footer">
+  WIZZZ · A trading name of Gedker Ltd · hello@wizzz.co.uk · wizzz.co.uk
+</div>
+
+</body>
+</html>

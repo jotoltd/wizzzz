@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WIZZZ Letterhead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: A4; margin: 0; }
+  html, body {
+    font-family: "Space Grotesk", sans-serif;
+    color: #0a0604;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    position: relative;
+    background: #fff;
+  }
+  .letterhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 18px;
+    border-bottom: 3px solid;
+    border-image: linear-gradient(90deg, #ffb347, #ff8a00, #ff4d00, #d6141f) 1;
+    margin-bottom: 40mm;
+  }
+  .letterhead-logo {
+    font-family: "Metamorphous", serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #ffb347, #ff8a00, #ff4d00, #d6141f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .letterhead-meta {
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .footer {
+    position: absolute;
+    bottom: 18mm;
+    left: 22mm;
+    right: 22mm;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="letterhead">
+    <div class="letterhead-logo">WIZZZ</div>
+    <div class="letterhead-meta">
+      hello@wizzz.co.uk<br>
+      wizzz.co.uk<br>
+      A trading name of Gedker Ltd
+    </div>
+  </div>
+
+  <!-- Content goes here -->
+
+  <div class="footer">
+    WIZZZ · A trading name of Gedker Ltd · hello@wizzz.co.uk · wizzz.co.uk
+  </div>
+</div>
+
+</body>
+</html>

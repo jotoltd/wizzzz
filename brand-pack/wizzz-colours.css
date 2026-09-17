@@ -1,0 +1,29 @@
+/* WIZZZ Brand Colours */
+/* A trading name of Gedker Ltd */
+
+:root {
+  /* Fire gradient stops */
+  --wizzz-ember:   #ffb347;
+  --wizzz-flame:   #ff8a00;
+  --wizzz-orange:  #ff4d00;
+  --wizzz-red:     #d6141f;
+
+  /* Surfaces */
+  --wizzz-ink:     #0a0604;
+  --wizzz-paper:   #fff7f2;
+
+  /* Utility */
+  --wizzz-line:    rgba(255, 247, 242, 0.12);
+  --wizzz-muted:   rgba(255, 247, 242, 0.60);
+
+  /* Gradient */
+  --wizzz-gradient: linear-gradient(90deg, #ffb347 0%, #ff8a00 33.33%, #ff4d00 66.67%, #d6141f 100%);
+}
+
+/* Text gradient utility */
+.wizzz-text-gradient {
+  background: var(--wizzz-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

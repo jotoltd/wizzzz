@@ -40,6 +40,9 @@
     <div class="grain"></div>
   </div>
 
+  <!-- scroll progress -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
   <!-- nav -->
   <header class="nav">
     <a href="#top" class="nav-logo"><img src="logo.svg" alt="WIZZZ" class="logo-img" /></a>
@@ -49,20 +52,36 @@
       <a href="#contact">Contact</a>
     </nav>
     <a href="#contact" class="nav-cta">Start a project</a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </header>
+
+  <!-- mobile menu -->
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <div class="mobile-menu-flame"></div>
+    <nav class="mobile-menu-links">
+      <a href="#services" class="mobile-link">Services</a>
+      <a href="#about" class="mobile-link">About</a>
+      <a href="#contact" class="mobile-link">Contact</a>
+      <a href="#contact" class="mobile-link mobile-link-cta">Start a project</a>
+    </nav>
+  </div>
 
   <main id="top">
     <!-- HERO -->
     <section class="hero">
       <h1 class="hero-title">
         <span class="line hero-anim" style="--d:0">WE BUILD</span>
-        <span class="line gradient-text hero-anim" style="--d:1">BOLD THINGS</span>
+        <span class="line gradient-text hero-anim" style="--d:1">BIG THINGS</span>
         <span class="line hero-anim" style="--d:2">THAT MOVE.</span>
       </h1>
       <p class="hero-sub reveal">
-        Websites. iOS apps. Ad campaigns. I run WIZZZ end to end.
-        No big team, no fancy office for you to pay for. Just me,
-        obsessed with the details that make people stop scrolling.
+        Websites. iOS apps. Ad campaigns. Built end to end by one person
+        who cares — no big team, no fancy office for you to pay for.
+      </p>
+      <p class="hero-tagline reveal">
+        Your website should be your hardest working employee.
       </p>
       <div class="hero-actions reveal">
         <a href="#contact" class="btn btn-primary">Start a project</a>
@@ -135,7 +154,7 @@
     <section class="about" id="about">
       <div class="about-grid">
         <p class="about-lead reveal">
-          WIZZZ is me. No handoffs, no layers, no diluted vision. No big
+          <img src="logo.svg" alt="WIZZZ" class="about-logo" /> is me. No handoffs, no layers, no diluted vision. No big
           team or fancy office you're paying for either. I'm with you from
           the first message to the final delivery.
         </p>

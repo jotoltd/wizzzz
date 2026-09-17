@@ -192,18 +192,9 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, var(--ember), var(--flame) 30%, var(--orange) 55%, var(--red));
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
   color: var(--orange);
-  -webkit-text-fill-color: transparent;
-  animation: shift 5s ease-in-out infinite alternate, flicker 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 40px rgba(255, 77, 0, 0.25));
-}
-@keyframes shift {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  text-shadow: 0 0 40px rgba(255, 77, 0, 0.35);
+  animation: flicker 3.5s ease-in-out infinite;
 }
 @keyframes flicker {
   0%, 100% { filter: brightness(1); }

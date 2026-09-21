@@ -262,9 +262,15 @@ $("dashTasks").addEventListener("change", (e) => {
   const id = e.target.dataset.taskToggle;
   if (id) toggleTask(id, e.target.checked);
 });
-$("dashTasks").addEventListener("click", (e) => {
-  const id = e.target.dataset.editTask;
-  if (id) { switchTab("tasks"); openTaskModal(tasks.find((t) => t.id === id)); }
+$("dashTasks").addEventListener("click", async (e) => {
+  const editId = e.target.dataset.editTask;
+  const delId = e.target.dataset.delTask;
+  if (editId) { switchTab("tasks"); openTaskModal(tasks.find((t) => t.id === editId)); }
+  if (delId) {
+    const { error } = await sb.from("tasks").delete().eq("id", delId);
+    if (error) return alert(error.message);
+    loadAll();
+  }
 });
 
 function switchTab(tab) {
@@ -428,6 +434,7 @@ $("cdInvoices").addEventListener("click", (e) => {
 
 $("activityForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
   const clientId = $("actClientId").value;
   const { error } = await sb.from("activities").insert({
     client_id: clientId,
@@ -812,6 +819,12 @@ $("qAddItemBtn").addEventListener("click", () => quoteEditor.add());
 $("iIssue").addEventListener("change", () => {
   if ($("invoiceId").value) return; // only for new invoices
   $("iDue").value = addDays($("iIssue").value, settings?.payment_terms_days ?? 14);
+});
+
+// same for quote validity on new quotes
+$("qIssue").addEventListener("change", () => {
+  if ($("quoteId").value) return;
+  $("qValid").value = addDays($("qIssue").value, 30);
 });
 
 $("iClient").addEventListener("change", () => {

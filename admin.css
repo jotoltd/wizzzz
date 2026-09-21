@@ -248,7 +248,7 @@ select.search-input { min-width: 140px; }
 .badge.active, .badge.planning, .badge.draft { color: var(--ember); border-color: rgba(255, 179, 71, 0.4); }
 .badge.in_progress, .badge.sent { color: var(--flame); border-color: rgba(255, 138, 0, 0.4); }
 .badge.review { color: var(--orange); border-color: rgba(255, 77, 0, 0.4); }
-.badge.overdue { color: #ff7a72; border-color: rgba(214, 20, 31, 0.6); }
+.badge.overdue, .badge.expired { color: #ff7a72; border-color: rgba(214, 20, 31, 0.6); }
 .badge.paid { color: #7ce0a3; border-color: rgba(124, 224, 163, 0.4); }
 .badge.done, .badge.paused, .badge.void, .badge.declined { color: var(--muted); }
 .badge.accepted { color: #7ce0a3; border-color: rgba(124, 224, 163, 0.4); }
@@ -276,6 +276,8 @@ td .row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap:
   font-family: inherit; font-size: inherit; font-weight: 600; padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
+.name-link { color: var(--paper); font-weight: inherit; }
+.name-link:hover { color: var(--flame); text-decoration: none; }
 
 /* ===== Modal ===== */
 .modal {

@@ -18,8 +18,15 @@ let clients = [];
 let projects = [];
 let invoices = [];
 let expenses = [];
+let quotes = [];
+let activities = [];
+let tasks = [];
 let settings = null;
 let schemaMissing = false;
+let clientQuery = "";
+let invoiceQuery = "";
+let invoiceStatusFilter = "";
+let pendingExpenseIds = [];
 
 // ===== Auth =====
 $("loginForm").addEventListener("submit", async (e) => {
@@ -72,22 +79,28 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 
 // ===== Loaders =====
 async function loadAll() {
-  const [c, p, inv, ex, st] = await Promise.all([
+  const [c, p, inv, ex, st, q, act, tk] = await Promise.all([
     sb.from("clients").select("*").order("created_at", { ascending: false }),
     sb.from("projects").select("*, clients(name)").order("created_at", { ascending: false }),
     sb.from("invoices").select("*, clients(name,company,email,address), invoice_items(*), payments(*)").order("created_at", { ascending: false }),
     sb.from("expenses").select("*, clients(name)").order("incurred_on", { ascending: false }),
     sb.from("settings").select("*").eq("id", 1).maybeSingle(),
+    sb.from("quotes").select("*, clients(name,company,email,address), quote_items(*)").order("created_at", { ascending: false }),
+    sb.from("activities").select("*").order("created_at", { ascending: false }),
+    sb.from("tasks").select("*, clients(name)").order("due_date", { ascending: true }),
   ]);
 
   // detect missing CRM tables (old schema)
-  schemaMissing = [inv, ex, st].some((r) => r.error && r.error.code === "42P01");
+  schemaMissing = [inv, ex, st, q, act, tk].some((r) => r.error && r.error.code === "42P01");
   $("schemaBanner").hidden = !schemaMissing;
 
   if (c.error) console.error(c.error); else clients = c.data || [];
   if (p.error) console.error(p.error); else projects = p.data || [];
   invoices = inv.error ? [] : inv.data || [];
   expenses = ex.error ? [] : ex.data || [];
+  quotes = q.error ? [] : q.data || [];
+  activities = act.error ? [] : act.data || [];
+  tasks = tk.error ? [] : tk.data || [];
   settings = st.data || null;
 
   // bootstrap the settings row if it's missing, so invoice numbering always increments
@@ -96,15 +109,16 @@ async function loadAll() {
     settings = data || null;
   }
 
-  invoices.forEach((i) => {
-    (i.invoice_items || []).sort((a, b) => a.sort - b.sort);
-  });
+  invoices.forEach((i) => (i.invoice_items || []).sort((a, b) => a.sort - b.sort));
+  quotes.forEach((q) => (q.quote_items || []).sort((a, b) => a.sort - b.sort));
 
   renderDashboard();
   renderClients();
   renderProjects();
+  renderQuotes();
   renderInvoices();
   renderExpenses();
+  renderTasks();
   renderSettings();
 }
 
@@ -127,6 +141,23 @@ function nextInvoiceNumber() {
   const prefix = settings?.invoice_prefix ?? "INV-";
   const n = settings?.next_invoice_number ?? 1;
   return prefix + String(n).padStart(4, "0");
+}
+
+function nextQuoteNumber() {
+  const prefix = settings?.quote_prefix ?? "Q-";
+  const n = settings?.next_quote_number ?? 1;
+  return prefix + String(n).padStart(4, "0");
+}
+
+function itemsTotals(items, vatRate) {
+  const subtotal = (items || []).reduce((s, it) => s + it.qty * it.rate, 0);
+  const vat = subtotal * (Number(vatRate) || 0) / 100;
+  return { subtotal, vat, total: subtotal + vat };
+}
+
+function quoteDisplayStatus(q) {
+  if (q.status === "sent" && q.valid_until && q.valid_until < todayISO()) return "expired";
+  return q.status;
 }
 
 // ===== Dashboard =====
@@ -158,6 +189,35 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Active projects</div><div class="stat-value">${activeProjects}</div><div class="stat-sub">in progress / review</div></div>
     <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value">${money(expensesMonth)}</div><div class="stat-sub">this month</div></div>
   `;
+
+  // revenue chart — payments collected per month, last 6 months
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleDateString("en-GB", { month: "short" }),
+      sum: 0,
+    });
+  }
+  invoices.forEach((inv) => (inv.payments || []).forEach((p) => {
+    const m = months.find((mm) => mm.key === (p.paid_on || "").slice(0, 7));
+    if (m) m.sum += Number(p.amount);
+  }));
+  const maxSum = Math.max(...months.map((m) => m.sum), 1);
+  $("revChart").innerHTML = months.map((m) => `
+    <div class="rev-col">
+      <span class="rev-val">${m.sum ? money(m.sum) : ""}</span>
+      <div class="rev-bar" style="height:${Math.max((m.sum / maxSum) * 100, 3)}%"></div>
+      <span class="rev-label">${m.label}</span>
+    </div>`).join("");
+
+  // tasks due
+  const openTasks = tasks.filter((t) => !t.done).slice(0, 6);
+  $("dashTasks").innerHTML = openTasks.length
+    ? openTasks.map((t) => taskRow(t)).join("")
+    : `<p class="empty">Nothing due. All clear.</p>`;
 
   const dueList = invoices
     .filter((i) => ["sent", "overdue"].includes(displayStatus(i)) && invoiceTotals(i).balance > 0)
@@ -198,6 +258,15 @@ $("dashOutstanding").addEventListener("click", (e) => {
   openInvoiceModal(invoices.find((i) => i.id === id));
 });
 
+$("dashTasks").addEventListener("change", (e) => {
+  const id = e.target.dataset.taskToggle;
+  if (id) toggleTask(id, e.target.checked);
+});
+$("dashTasks").addEventListener("click", (e) => {
+  const id = e.target.dataset.editTask;
+  if (id) { switchTab("tasks"); openTaskModal(tasks.find((t) => t.id === id)); }
+});
+
 function switchTab(tab) {
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
@@ -205,13 +274,21 @@ function switchTab(tab) {
 }
 
 // ===== Clients =====
+$("clientSearch").addEventListener("input", (e) => {
+  clientQuery = e.target.value.trim().toLowerCase();
+  renderClients();
+});
+
 function renderClients() {
   const list = $("clientsList");
-  if (!clients.length) {
-    list.innerHTML = `<p class="empty">No clients yet. Add your first one.</p>`;
+  const filtered = clientQuery
+    ? clients.filter((c) => [c.name, c.company, c.email].some((v) => (v || "").toLowerCase().includes(clientQuery)))
+    : clients;
+  if (!filtered.length) {
+    list.innerHTML = `<p class="empty">${clients.length ? "No clients match your search." : "No clients yet. Add your first one."}</p>`;
     return;
   }
-  list.innerHTML = clients.map((c) => {
+  list.innerHTML = filtered.map((c) => {
     const projCount = projects.filter((p) => p.client_id === c.id).length;
     const owed = invoices
       .filter((i) => i.client_id === c.id)
@@ -220,7 +297,7 @@ function renderClients() {
         return ["sent", "overdue"].includes(ds) ? s + invoiceTotals(i).balance : s;
       }, 0);
     return `<div class="card-item">
-      <h3>${esc(c.name)}</h3>
+      <h3><button class="link-btn name-link" data-view-client="${c.id}">${esc(c.name)}</button></h3>
       <div class="card-meta">
         ${c.company ? `<span>${esc(c.company)}</span>` : ""}
         ${c.email ? `<span><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></span>` : ""}
@@ -239,9 +316,11 @@ function renderClients() {
 }
 
 $("clientsList").addEventListener("click", async (e) => {
+  const viewId = e.target.dataset.viewClient;
   const editId = e.target.dataset.editClient;
   const delId = e.target.dataset.delClient;
   const invId = e.target.dataset.invClient;
+  if (viewId) openClientDetail(viewId);
   if (editId) openClientModal(clients.find((c) => c.id === editId));
   if (invId) openInvoiceModal(null, invId);
   if (delId) {
@@ -285,6 +364,81 @@ $("clientForm").addEventListener("submit", async (e) => {
   if (error) return alert(error.message);
   $("clientModal").hidden = true;
   loadAll();
+});
+
+// ===== Client detail =====
+function openClientDetail(id) {
+  const c = clients.find((x) => x.id === id);
+  if (!c) return;
+  $("cdName").textContent = c.name;
+  const metaParts = [];
+  if (c.company) metaParts.push(esc(c.company));
+  if (c.email) metaParts.push(`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`);
+  if (c.phone) metaParts.push(esc(c.phone));
+  if (c.address) metaParts.push(esc(c.address).replace(/\n/g, ", "));
+  if (c.notes) metaParts.push(esc(c.notes));
+  $("cdMeta").innerHTML = metaParts.map((v) => `<span>${v}</span>`).join("");
+  $("cdBadge").innerHTML = `<span class="badge ${c.status}">${label(c.status)}</span>`;
+
+  const cProjects = projects.filter((p) => p.client_id === id);
+  const cInvoices = invoices.filter((i) => i.client_id === id);
+  const invoiced = cInvoices.reduce((s, i) => s + invoiceTotals(i).total, 0);
+  const owed = cInvoices.reduce((s, i) => ["sent", "overdue"].includes(displayStatus(i)) ? s + invoiceTotals(i).balance : s, 0);
+
+  $("cdStats").innerHTML = `
+    <div class="stat-card"><div class="stat-label">Projects</div><div class="stat-value">${cProjects.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Invoiced</div><div class="stat-value">${money(invoiced)}</div></div>
+    <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value fire">${money(owed)}</div></div>`;
+
+  $("cdProjects").innerHTML = cProjects.length
+    ? cProjects.map((p) => `<div class="list-row"><div class="grow">${esc(p.title)}<div class="sub">${p.due_date ? "Due " + fmtDate(p.due_date) : "No due date"}</div></div><span class="badge ${p.status}">${label(p.status)}</span></div>`).join("")
+    : `<p class="empty" style="padding:14px 0">No projects.</p>`;
+
+  $("cdInvoices").innerHTML = cInvoices.length
+    ? cInvoices.map((inv) => {
+        const t = invoiceTotals(inv), ds = displayStatus(inv);
+        return `<div class="list-row"><div class="grow"><button class="link-btn" data-cd-invoice="${inv.id}">${esc(inv.invoice_number)}</button><div class="sub">${fmtDate(inv.issue_date)}</div></div><span class="badge ${ds}">${label(ds)}</span><span class="amount">${money(t.balance > 0 ? t.balance : t.total)}</span></div>`;
+      }).join("")
+    : `<p class="empty" style="padding:14px 0">No invoices.</p>`;
+
+  renderClientActivity(id);
+  $("actClientId").value = id;
+  $("cdEditBtn").onclick = () => { $("clientDetailModal").hidden = true; openClientModal(c); };
+  $("clientDetailModal").hidden = false;
+}
+
+function renderClientActivity(clientId) {
+  const items = activities.filter((a) => a.client_id === clientId);
+  $("cdActivity").innerHTML = items.length
+    ? items.map((a) => `<div class="timeline-item">
+        <span class="timeline-type">${label(a.type)}</span>
+        <span class="timeline-body">${esc(a.body)}</span>
+        <span class="timeline-date">${fmtDate((a.created_at || "").slice(0, 10))}</span>
+      </div>`).join("")
+    : `<p class="empty" style="padding:14px 0">No activity logged yet.</p>`;
+}
+
+$("cdInvoices").addEventListener("click", (e) => {
+  const id = e.target.dataset.cdInvoice;
+  if (!id) return;
+  $("clientDetailModal").hidden = true;
+  switchTab("invoices");
+  openInvoiceModal(invoices.find((i) => i.id === id));
+});
+
+$("activityForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const clientId = $("actClientId").value;
+  const { error } = await sb.from("activities").insert({
+    client_id: clientId,
+    type: $("actType").value,
+    body: $("actBody").value.trim(),
+  });
+  if (error) return alert(error.message);
+  $("actBody").value = "";
+  const { data } = await sb.from("activities").select("*").eq("client_id", clientId).order("created_at", { ascending: false });
+  activities = [...activities.filter((a) => a.client_id !== clientId), ...(data || [])];
+  renderClientActivity(clientId);
 });
 
 // ===== Projects =====
@@ -364,20 +518,195 @@ $("projectForm").addEventListener("submit", async (e) => {
   loadAll();
 });
 
+// ===== Quotes =====
+function renderQuotes() {
+  const list = $("quotesList");
+  if (schemaMissing) {
+    list.innerHTML = `<p class="empty">Quotes need the updated schema — see the banner above.</p>`;
+    return;
+  }
+  if (!quotes.length) {
+    list.innerHTML = `<p class="empty">No quotes yet. Create your first one.</p>`;
+    return;
+  }
+  list.innerHTML = `<div class="table-wrap"><table class="data">
+    <tr><th>Quote</th><th>Client</th><th>Issued</th><th>Valid until</th><th>Status</th><th class="right">Total</th><th></th></tr>
+    ${quotes.map((q) => {
+      const t = itemsTotals(q.quote_items, q.vat_rate);
+      const ds = quoteDisplayStatus(q);
+      return `<tr>
+        <td><button class="link-btn" data-edit-quote="${q.id}">${esc(q.quote_number)}</button></td>
+        <td>${esc(q.clients?.name || "—")}</td>
+        <td>${fmtDate(q.issue_date)}</td>
+        <td>${fmtDate(q.valid_until)}</td>
+        <td><span class="badge ${ds}">${label(ds)}</span></td>
+        <td class="right money">${money(t.total)}</td>
+        <td><div class="row-actions">
+          <button class="btn btn-ghost btn-sm" data-edit-quote="${q.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del-quote="${q.id}">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join("")}
+  </table></div>`;
+}
+
+$("quotesList").addEventListener("click", async (e) => {
+  const editId = e.target.dataset.editQuote;
+  const delId = e.target.dataset.delQuote;
+  if (editId) openQuoteModal(quotes.find((q) => q.id === editId));
+  if (delId) {
+    if (!confirm("Delete this quote?")) return;
+    const { error } = await sb.from("quotes").delete().eq("id", delId);
+    if (error) return alert(error.message);
+    loadAll();
+  }
+});
+
+$("addQuoteBtn").addEventListener("click", () => openQuoteModal());
+
+$("qClient").addEventListener("change", () => {
+  const cid = $("qClient").value;
+  const current = $("qProject").value;
+  $("qProject").innerHTML = `<option value="">—</option>` +
+    projects.filter((p) => !cid || p.client_id === cid)
+      .map((p) => `<option value="${p.id}" ${current === p.id ? "selected" : ""}>${esc(p.title)}</option>`).join("");
+});
+
+function openQuoteModal(q = null, prefillClientId = null) {
+  if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
+  $("quoteModalTitle").textContent = q ? `Quote ${q.quote_number}` : "New quote";
+  $("quoteId").value = q?.id || "";
+  $("qClient").innerHTML = clientOptions(q?.client_id || prefillClientId);
+  $("qClient").dispatchEvent(new Event("change"));
+  $("qProject").value = q?.project_id || "";
+  $("qIssue").value = q?.issue_date || todayISO();
+  $("qValid").value = q?.valid_until || addDays($("qIssue").value, 30);
+  $("qVat").value = q ? Number(q.vat_rate) : (settings?.vat_rate ?? 0);
+  $("qStatus").value = q?.status || "draft";
+  $("qNotes").value = q?.notes || "";
+
+  quoteEditor.items = q
+    ? (q.quote_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate }))
+    : [{ description: "", qty: 1, rate: 0 }];
+  if (!quoteEditor.items.length) quoteEditor.items.push({ description: "", qty: 1, rate: 0 });
+  quoteEditor.render();
+
+  $("printQuoteBtn").hidden = !q;
+  $("convertQuoteBtn").hidden = !q || q.status === "accepted";
+  $("quoteModal").hidden = false;
+}
+
+$("quoteForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = $("quoteId").value;
+  const payload = {
+    client_id: $("qClient").value || null,
+    project_id: $("qProject").value || null,
+    issue_date: $("qIssue").value,
+    valid_until: $("qValid").value || null,
+    vat_rate: Number($("qVat").value) || 0,
+    status: $("qStatus").value,
+    notes: $("qNotes").value.trim() || null,
+  };
+
+  let quoteId = id;
+  if (!id) {
+    payload.quote_number = nextQuoteNumber();
+    const { data, error } = await sb.from("quotes").insert(payload).select("id").single();
+    if (error) return alert(error.message);
+    quoteId = data.id;
+    if (settings) {
+      await sb.from("settings").update({ next_quote_number: (settings.next_quote_number || 1) + 1 }).eq("id", 1);
+      settings.next_quote_number++;
+    }
+  } else {
+    const { error } = await sb.from("quotes").update(payload).eq("id", id);
+    if (error) return alert(error.message);
+    await sb.from("quote_items").delete().eq("quote_id", id);
+  }
+
+  const items = quoteEditor.items
+    .filter((it) => it.description.trim() || Number(it.rate) > 0)
+    .map((it, i) => ({
+      quote_id: quoteId,
+      description: it.description.trim() || "Item",
+      qty: Number(it.qty) || 0,
+      rate: Number(it.rate) || 0,
+      sort: i,
+    }));
+  if (items.length) {
+    const { error } = await sb.from("quote_items").insert(items);
+    if (error) return alert(error.message);
+  }
+
+  $("quoteModal").hidden = true;
+  loadAll();
+});
+
+// turn an accepted quote into a draft invoice, copying line items
+$("convertQuoteBtn").addEventListener("click", async () => {
+  const q = quotes.find((x) => x.id === $("quoteId").value);
+  if (!q) return;
+  if (!confirm(`Convert ${q.quote_number} to an invoice?`)) return;
+  const num = nextInvoiceNumber();
+  const { data: inv, error } = await sb.from("invoices").insert({
+    invoice_number: num,
+    client_id: q.client_id,
+    project_id: q.project_id,
+    status: "draft",
+    issue_date: todayISO(),
+    due_date: addDays(todayISO(), settings?.payment_terms_days ?? 14),
+    vat_rate: q.vat_rate,
+    notes: q.notes,
+  }).select("id").single();
+  if (error) return alert(error.message);
+
+  const items = (q.quote_items || []).map((it, i) => ({
+    invoice_id: inv.id, description: it.description, qty: it.qty, rate: it.rate, sort: i,
+  }));
+  if (items.length) {
+    const { error: ie } = await sb.from("invoice_items").insert(items);
+    if (ie) return alert(ie.message);
+  }
+  await sb.from("quotes").update({ status: "accepted" }).eq("id", q.id);
+  if (settings) {
+    await sb.from("settings").update({ next_invoice_number: (settings.next_invoice_number || 1) + 1 }).eq("id", 1);
+    settings.next_invoice_number++;
+  }
+  $("quoteModal").hidden = true;
+  await loadAll();
+  switchTab("invoices");
+  openInvoiceModal(invoices.find((i) => i.id === inv.id));
+});
+
 // ===== Invoices =====
+$("invoiceSearch").addEventListener("input", (e) => {
+  invoiceQuery = e.target.value.trim().toLowerCase();
+  renderInvoices();
+});
+$("invoiceStatusFilter").addEventListener("change", (e) => {
+  invoiceStatusFilter = e.target.value;
+  renderInvoices();
+});
+
 function renderInvoices() {
   const list = $("invoicesList");
   if (schemaMissing) {
     list.innerHTML = `<p class="empty">Invoices need the updated schema — see the banner above.</p>`;
     return;
   }
-  if (!invoices.length) {
-    list.innerHTML = `<p class="empty">No invoices yet. Create your first one.</p>`;
+  const filtered = invoices.filter((inv) => {
+    if (invoiceStatusFilter && displayStatus(inv) !== invoiceStatusFilter) return false;
+    if (invoiceQuery && ![inv.invoice_number, inv.clients?.name].some((v) => (v || "").toLowerCase().includes(invoiceQuery))) return false;
+    return true;
+  });
+  if (!filtered.length) {
+    list.innerHTML = `<p class="empty">${invoices.length ? "No invoices match your filters." : "No invoices yet. Create your first one."}</p>`;
     return;
   }
   list.innerHTML = `<div class="table-wrap"><table class="data">
     <tr><th>Invoice</th><th>Client</th><th>Issued</th><th>Due</th><th>Status</th><th class="right">Total</th><th class="right">Balance</th><th></th></tr>
-    ${invoices.map((inv) => {
+    ${filtered.map((inv) => {
       const t = invoiceTotals(inv);
       const ds = displayStatus(inv);
       return `<tr>
@@ -414,16 +743,26 @@ $("invoicesList").addEventListener("click", async (e) => {
 
 $("addInvoiceBtn").addEventListener("click", () => openInvoiceModal());
 
-// --- line items editor ---
-let editorItems = [];
-
-function renderItemRows() {
-  const list = $("itemsList");
-  list.innerHTML = `
+// --- line items editor (shared by invoices & quotes) ---
+function createItemsEditor(listEl, totalsEl, vatEl) {
+  let items = [];
+  const header = `
     <div class="item-row" style="color:var(--muted);font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">
       <span>Description</span><span>Qty</span><span>Rate</span><span style="text-align:right">Amount</span><span></span>
-    </div>` +
-    editorItems.map((it, idx) => `
+    </div>`;
+
+  function totals() {
+    const subtotal = items.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.rate) || 0), 0);
+    const vatRate = Number(vatEl.value) || 0;
+    const vat = subtotal * vatRate / 100;
+    totalsEl.innerHTML = `
+      <div class="t-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+      ${vatRate ? `<div class="t-row"><span>VAT (${vatRate}%)</span><span>${money(vat)}</span></div>` : ""}
+      <div class="t-row total"><span>Total</span><span>${money(subtotal + vat)}</span></div>`;
+  }
+
+  function render() {
+    listEl.innerHTML = header + items.map((it, idx) => `
       <div class="item-row">
         <input type="text" data-item-desc="${idx}" value="${esc(it.description)}" placeholder="Service or deliverable" />
         <input type="number" data-item-qty="${idx}" value="${it.qty}" min="0" step="0.5" />
@@ -431,45 +770,43 @@ function renderItemRows() {
         <span class="item-amount">${money(it.qty * it.rate)}</span>
         <button type="button" class="item-del" data-item-del="${idx}" title="Remove">×</button>
       </div>`).join("");
-  updateInvoiceTotals();
-}
-
-function updateInvoiceTotals() {
-  const subtotal = editorItems.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.rate) || 0), 0);
-  const vatRate = Number($("iVat").value) || 0;
-  const vat = subtotal * vatRate / 100;
-  $("invoiceTotals").innerHTML = `
-    <div class="t-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
-    ${vatRate ? `<div class="t-row"><span>VAT (${vatRate}%)</span><span>${money(vat)}</span></div>` : ""}
-    <div class="t-row total"><span>Total</span><span>${money(subtotal + vat)}</span></div>`;
-}
-
-$("itemsList").addEventListener("input", (e) => {
-  const d = e.target.dataset;
-  if (d.itemDesc !== undefined) editorItems[d.itemDesc].description = e.target.value;
-  if (d.itemQty !== undefined) editorItems[d.itemQty].qty = Number(e.target.value);
-  if (d.itemRate !== undefined) editorItems[d.itemRate].rate = Number(e.target.value);
-  const row = e.target.closest(".item-row");
-  if (row) {
-    const idx = d.itemQty ?? d.itemRate ?? d.itemDesc;
-    row.querySelector(".item-amount").textContent = money((editorItems[idx].qty || 0) * (editorItems[idx].rate || 0));
+    totals();
   }
-  updateInvoiceTotals();
-});
 
-$("itemsList").addEventListener("click", (e) => {
-  const idx = e.target.dataset.itemDel;
-  if (idx === undefined) return;
-  editorItems.splice(Number(idx), 1);
-  renderItemRows();
-});
+  listEl.addEventListener("input", (e) => {
+    const d = e.target.dataset;
+    if (d.itemDesc !== undefined) items[d.itemDesc].description = e.target.value;
+    if (d.itemQty !== undefined) items[d.itemQty].qty = Number(e.target.value);
+    if (d.itemRate !== undefined) items[d.itemRate].rate = Number(e.target.value);
+    const idx = d.itemQty ?? d.itemRate ?? d.itemDesc;
+    if (idx !== undefined) {
+      const row = e.target.closest(".item-row");
+      if (row) row.querySelector(".item-amount").textContent = money((items[idx].qty || 0) * (items[idx].rate || 0));
+    }
+    totals();
+  });
 
-$("addItemBtn").addEventListener("click", () => {
-  editorItems.push({ description: "", qty: 1, rate: 0 });
-  renderItemRows();
-});
+  listEl.addEventListener("click", (e) => {
+    const idx = e.target.dataset.itemDel;
+    if (idx === undefined) return;
+    items.splice(Number(idx), 1);
+    render();
+  });
 
-$("iVat").addEventListener("input", updateInvoiceTotals);
+  vatEl.addEventListener("input", totals);
+
+  return {
+    get items() { return items; },
+    set items(v) { items = v; },
+    render,
+    add() { items.push({ description: "", qty: 1, rate: 0 }); render(); },
+  };
+}
+
+const invEditor = createItemsEditor($("itemsList"), $("invoiceTotals"), $("iVat"));
+const quoteEditor = createItemsEditor($("qItemsList"), $("quoteTotals"), $("qVat"));
+$("addItemBtn").addEventListener("click", () => invEditor.add());
+$("qAddItemBtn").addEventListener("click", () => quoteEditor.add());
 
 // keep due date in step with issue date on new invoices
 $("iIssue").addEventListener("change", () => {
@@ -484,7 +821,32 @@ $("iClient").addEventListener("change", () => {
   $("iProject").innerHTML = `<option value="">—</option>` +
     projects.filter((p) => !cid || p.client_id === cid)
       .map((p) => `<option value="${p.id}" ${current === p.id ? "selected" : ""}>${esc(p.title)}</option>`).join("");
+  refreshBillableHint();
 });
+
+// offer to pull uninvoiced billable expenses into a new invoice
+function refreshBillableHint() {
+  const hint = $("billableHint");
+  pendingExpenseIds = [];
+  const cid = $("iClient").value;
+  if ($("invoiceId").value || !cid) { hint.hidden = true; return; }
+  const billable = expenses.filter((e) => e.client_id === cid && e.billable && !e.invoiced);
+  if (!billable.length) { hint.hidden = true; return; }
+  const total = billable.reduce((s, e) => s + Number(e.amount), 0);
+  hint.innerHTML = `<span>${billable.length} uninvoiced billable expense${billable.length === 1 ? "" : "s"} — ${money(total)}</span>
+    <button type="button" class="btn btn-ghost btn-sm" id="importBillableBtn">Import as line items</button>`;
+  hint.hidden = false;
+  $("importBillableBtn").addEventListener("click", () => {
+    billable.forEach((e) => invEditor.items.push({
+      description: e.description || e.vendor || "Expense",
+      qty: 1,
+      rate: Number(e.amount),
+    }));
+    pendingExpenseIds = billable.map((e) => e.id);
+    invEditor.render();
+    hint.hidden = true;
+  });
+}
 
 function openInvoiceModal(inv = null, prefillClientId = null) {
   if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
@@ -500,17 +862,18 @@ function openInvoiceModal(inv = null, prefillClientId = null) {
   $("iStatus").value = inv?.status || "draft";
   $("iNotes").value = inv?.notes || "";
 
-  editorItems = inv
+  invEditor.items = inv
     ? (inv.invoice_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate }))
     : [{ description: "", qty: 1, rate: 0 }];
-  if (!editorItems.length) editorItems.push({ description: "", qty: 1, rate: 0 });
-  renderItemRows();
+  if (!invEditor.items.length) invEditor.items.push({ description: "", qty: 1, rate: 0 });
+  invEditor.render();
 
   // payments block only for saved invoices
   $("paymentsBlock").hidden = !inv;
   $("printInvoiceBtn").hidden = !inv;
   if (inv) renderPaymentsList(inv);
 
+  refreshBillableHint();
   $("invoiceModal").hidden = false;
 }
 
@@ -577,7 +940,7 @@ $("invoiceForm").addEventListener("submit", async (e) => {
     await sb.from("invoice_items").delete().eq("invoice_id", id);
   }
 
-  const items = editorItems
+  const items = invEditor.items
     .filter((it) => it.description.trim() || Number(it.rate) > 0)
     .map((it, i) => ({
       invoice_id: invoiceId,
@@ -589,6 +952,12 @@ $("invoiceForm").addEventListener("submit", async (e) => {
   if (items.length) {
     const { error } = await sb.from("invoice_items").insert(items);
     if (error) return alert(error.message);
+  }
+
+  // mark imported billable expenses as invoiced
+  if (pendingExpenseIds.length) {
+    await sb.from("expenses").update({ invoiced: true }).in("id", pendingExpenseIds);
+    pendingExpenseIds = [];
   }
 
   $("invoiceModal").hidden = true;
@@ -637,37 +1006,52 @@ $("paymentForm").addEventListener("submit", async (e) => {
   }
 });
 
-// ===== Invoice print =====
+// ===== Print (invoices & quotes) =====
 $("printInvoiceBtn").addEventListener("click", () => {
   const inv = invoices.find((i) => i.id === $("invoiceId").value);
-  if (inv) printInvoice(inv);
+  if (inv) printDocument(inv, "invoice");
 });
 
-function printInvoice(inv) {
-  const t = invoiceTotals(inv);
-  const client = inv.clients || {};
-  const s = settings || {};
-  const ds = displayStatus(inv);
+$("printQuoteBtn").addEventListener("click", () => {
+  const q = quotes.find((x) => x.id === $("quoteId").value);
+  if (q) printDocument(q, "quote");
+});
 
-  const itemRows = (inv.invoice_items || []).map((it) => `
+function printDocument(doc, kind) {
+  const isQuote = kind === "quote";
+  const number = isQuote ? doc.quote_number : doc.invoice_number;
+  const items = isQuote ? doc.quote_items : doc.invoice_items;
+  const t = itemsTotals(items, doc.vat_rate);
+  const paid = isQuote ? 0 : (doc.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+  const balance = t.total - paid;
+  const client = doc.clients || {};
+  const s = settings || {};
+  const ds = isQuote ? quoteDisplayStatus(doc) : displayStatus(doc);
+
+  const itemRows = (items || []).map((it) => `
     <tr><td>${esc(it.description)}</td><td class="right">${it.qty}</td><td class="right">${money(it.rate)}</td><td class="right">${money(it.qty * it.rate)}</td></tr>`).join("");
 
-  const payRows = t.paid > 0
-    ? `<tr class="vat-row"><td>Paid</td><td class="right">−${money(t.paid)}</td></tr>
-       <tr class="total-row"><td>${t.balance > 0 ? "Balance Due" : "Total"}</td><td class="right">${money(Math.max(t.balance, 0))}</td></tr>`
-    : `<tr class="total-row"><td>Total Due</td><td class="right">${money(t.total)}</td></tr>`;
+  const payRows = isQuote
+    ? `<tr class="total-row"><td>Total</td><td class="right">${money(t.total)}</td></tr>`
+    : paid > 0
+      ? `<tr class="vat-row"><td>Paid</td><td class="right">−${money(paid)}</td></tr>
+         <tr class="total-row"><td>${balance > 0 ? "Balance Due" : "Total"}</td><td class="right">${money(Math.max(balance, 0))}</td></tr>`
+      : `<tr class="total-row"><td>Total Due</td><td class="right">${money(t.total)}</td></tr>`;
 
-  const bankBlock = (s.bank_name || s.account_number) ? `
+  const bankBlock = !isQuote && (s.bank_name || s.account_number) ? `
     <div class="payment">
       <h3>Payment Details</h3>
       ${s.bank_name ? `<p><strong>Bank:</strong> ${esc(s.bank_name)}</p>` : ""}
       <p><strong>Name:</strong> ${esc(s.account_name || "Gedker Ltd")}</p>
       ${s.sort_code ? `<p><strong>Sort Code:</strong> ${esc(s.sort_code)}</p>` : ""}
       ${s.account_number ? `<p><strong>Account:</strong> ${esc(s.account_number)}</p>` : ""}
-      <p><strong>Reference:</strong> ${esc(inv.invoice_number)}</p>
+      <p><strong>Reference:</strong> ${esc(number)}</p>
     </div>` : "";
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(inv.invoice_number)} · WIZZZ</title>
+  const stampStatuses = isQuote ? ["accepted", "declined"] : ["paid", "void"];
+  const stampColor = { paid: "#1d9e57", accepted: "#1d9e57", void: "#d6141f", declined: "#d6141f" }[ds] || "#d6141f";
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(number)} · WIZZZ</title>
 <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -676,7 +1060,7 @@ function printInvoice(inv) {
   .letterhead-logo { font-family:"Metamorphous",serif; font-size:36px; letter-spacing:4px; background:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .letterhead-meta { text-align:right; font-size:12px; color:#666; }
   .invoice-title { font-family:"Metamorphous",serif; font-size:28px; color:#ff4d00; margin-bottom:24px; }
-  .stamp { float:right; font-family:"Metamorphous",serif; font-size:20px; color:${ds === "paid" ? "#1d9e57" : "#d6141f"}; border:2px solid currentColor; padding:4px 14px; border-radius:8px; transform:rotate(-4deg); }
+  .stamp { float:right; font-family:"Metamorphous",serif; font-size:20px; color:${stampColor}; border:2px solid currentColor; padding:4px 14px; border-radius:8px; transform:rotate(-4deg); }
   .parties { display:flex; justify-content:space-between; margin-bottom:32px; font-size:13px; }
   .party-label { font-family:"Metamorphous",serif; font-size:11px; color:#ff4d00; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
   .invoice-meta { display:flex; gap:40px; margin-bottom:32px; font-size:13px; padding:16px 20px; background:#fff7f2; border-left:3px solid #ff4d00; }
@@ -702,16 +1086,16 @@ function printInvoice(inv) {
   <div class="letterhead-logo">WIZZZ</div>
   <div class="letterhead-meta">hello@wizzz.co.uk<br>wizzz.co.uk<br>A trading name of Gedker Ltd</div>
 </div>
-${["paid", "void"].includes(ds) ? `<div class="stamp">${ds.toUpperCase()}</div>` : ""}
-<div class="invoice-title">INVOICE</div>
+${stampStatuses.includes(ds) ? `<div class="stamp">${ds.toUpperCase()}</div>` : ""}
+<div class="invoice-title">${kind.toUpperCase()}</div>
 <div class="parties">
   <div class="party"><div class="party-label">From</div><strong>WIZZZ</strong><br>A trading name of Gedker Ltd<br>hello@wizzz.co.uk<br>wizzz.co.uk</div>
   <div class="party"><div class="party-label">Bill To</div><strong>${esc(client.name || "—")}</strong><br>${esc(client.company || "")}<br>${esc(client.address || "").replace(/\n/g, "<br>")}<br>${esc(client.email || "")}</div>
   </div>
 <div class="invoice-meta">
-  <div><strong>Invoice No.</strong><span>${esc(inv.invoice_number)}</span></div>
-  <div><strong>Issue Date</strong><span>${fmtDate(inv.issue_date)}</span></div>
-  <div><strong>Due Date</strong><span>${fmtDate(inv.due_date)}</span></div>
+  <div><strong>${isQuote ? "Quote No." : "Invoice No."}</strong><span>${esc(number)}</span></div>
+  <div><strong>Issue Date</strong><span>${fmtDate(doc.issue_date)}</span></div>
+  <div><strong>${isQuote ? "Valid Until" : "Due Date"}</strong><span>${fmtDate(isQuote ? doc.valid_until : doc.due_date)}</span></div>
 </div>
 <table>
   <tr><th>Description</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr>
@@ -719,11 +1103,13 @@ ${["paid", "void"].includes(ds) ? `<div class="stamp">${ds.toUpperCase()}</div>`
 </table>
 <table class="totals">
   <tr class="subtotal-row"><td>Subtotal</td><td class="right">${money(t.subtotal)}</td></tr>
-  ${Number(inv.vat_rate) ? `<tr class="vat-row"><td>VAT (${Number(inv.vat_rate)}%)</td><td class="right">${money(t.vat)}</td></tr>` : ""}
+  ${Number(doc.vat_rate) ? `<tr class="vat-row"><td>VAT (${Number(doc.vat_rate)}%)</td><td class="right">${money(t.vat)}</td></tr>` : ""}
   ${payRows}
 </table>
 ${bankBlock}
-<div class="notes">${esc(inv.notes || s.invoice_notes || `Payment due within ${s.payment_terms_days ?? 14} days of issue date. Please include the invoice number as payment reference. Made with fire by WIZZZ.`)}</div>
+<div class="notes">${esc(doc.notes || (isQuote
+    ? `This quote is valid until ${fmtDate(doc.valid_until)}. Prices exclude VAT unless shown above. Made with fire by WIZZZ.`
+    : s.invoice_notes || `Payment due within ${s.payment_terms_days ?? 14} days of issue date. Please include the invoice number as payment reference. Made with fire by WIZZZ.`))}</div>
 <div class="footer">WIZZZ · A trading name of Gedker Ltd · hello@wizzz.co.uk · wizzz.co.uk</div>
 </body></html>`;
 
@@ -815,11 +1201,127 @@ $("expenseForm").addEventListener("submit", async (e) => {
   loadAll();
 });
 
+// ===== Tasks =====
+function taskRow(t) {
+  const overdue = !t.done && t.due_date && t.due_date < todayISO();
+  return `<div class="list-row">
+    <input type="checkbox" class="task-check" data-task-toggle="${t.id}" ${t.done ? "checked" : ""} />
+    <div class="grow">
+      <button class="link-btn ${t.done ? "task-done" : ""}" data-edit-task="${t.id}">${esc(t.title)}</button>
+      <div class="sub">${[t.clients?.name, t.due_date ? "Due " + fmtDate(t.due_date) : null].filter(Boolean).join(" · ")}</div>
+    </div>
+    ${overdue ? `<span class="badge overdue">Overdue</span>` : ""}
+    <button class="btn btn-danger btn-sm" data-del-task="${t.id}">Delete</button>
+  </div>`;
+}
+
+function renderTasks() {
+  const list = $("tasksList");
+  if (schemaMissing) {
+    list.innerHTML = `<p class="empty">Tasks need the updated schema — see the banner above.</p>`;
+    return;
+  }
+  if (!tasks.length) {
+    list.innerHTML = `<p class="empty">No tasks. Add a follow-up so nothing slips.</p>`;
+    return;
+  }
+  const open = tasks.filter((t) => !t.done);
+  const done = tasks.filter((t) => t.done);
+  list.innerHTML =
+    open.map(taskRow).join("") +
+    (done.length ? `<h4 class="section-title">Done</h4>` + done.map(taskRow).join("") : "");
+}
+
+$("tasksList").addEventListener("change", (e) => {
+  const id = e.target.dataset.taskToggle;
+  if (id) toggleTask(id, e.target.checked);
+});
+$("tasksList").addEventListener("click", async (e) => {
+  const editId = e.target.dataset.editTask;
+  const delId = e.target.dataset.delTask;
+  if (editId) openTaskModal(tasks.find((t) => t.id === editId));
+  if (delId) {
+    const { error } = await sb.from("tasks").delete().eq("id", delId);
+    if (error) return alert(error.message);
+    loadAll();
+  }
+});
+
+async function toggleTask(id, done) {
+  const { error } = await sb.from("tasks").update({ done }).eq("id", id);
+  if (error) return alert(error.message);
+  loadAll();
+}
+
+$("addTaskBtn").addEventListener("click", () => openTaskModal());
+
+function openTaskModal(t = null, prefillClientId = null) {
+  if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
+  $("taskModalTitle").textContent = t ? "Edit task" : "Add task";
+  $("taskId").value = t?.id || "";
+  $("tTitle").value = t?.title || "";
+  $("tDue").value = t?.due_date || "";
+  $("tClient").innerHTML = clientOptions(t?.client_id || prefillClientId);
+  $("taskModal").hidden = false;
+}
+
+$("taskForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = $("taskId").value;
+  const payload = {
+    title: $("tTitle").value.trim(),
+    due_date: $("tDue").value || null,
+    client_id: $("tClient").value || null,
+  };
+  const { error } = id
+    ? await sb.from("tasks").update(payload).eq("id", id)
+    : await sb.from("tasks").insert(payload);
+  if (error) return alert(error.message);
+  $("taskModal").hidden = true;
+  loadAll();
+});
+
+// ===== CSV export =====
+function exportCSV(filename, headers, rows) {
+  const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [headers.map(q).join(","), ...rows.map((r) => r.map(q).join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+$("exportClientsBtn").addEventListener("click", () =>
+  exportCSV("clients.csv",
+    ["Name", "Company", "Email", "Phone", "Address", "Status", "Created"],
+    clients.map((c) => [c.name, c.company, c.email, c.phone, c.address, c.status, (c.created_at || "").slice(0, 10)]))
+);
+
+$("exportInvoicesBtn").addEventListener("click", () =>
+  exportCSV("invoices.csv",
+    ["Number", "Client", "Issued", "Due", "Status", "Subtotal", "VAT", "Total", "Paid", "Balance"],
+    invoices.map((inv) => {
+      const t = invoiceTotals(inv);
+      return [inv.invoice_number, inv.clients?.name, inv.issue_date, inv.due_date, displayStatus(inv),
+        t.subtotal.toFixed(2), t.vat.toFixed(2), t.total.toFixed(2), t.paid.toFixed(2), t.balance.toFixed(2)];
+    }))
+);
+
+$("exportExpensesBtn").addEventListener("click", () =>
+  exportCSV("expenses.csv",
+    ["Date", "Vendor", "Description", "Category", "Amount", "Billable", "Invoiced", "Client"],
+    expenses.map((e) => [e.incurred_on, e.vendor, e.description, e.category, Number(e.amount).toFixed(2),
+      e.billable ? "yes" : "no", e.invoiced ? "yes" : "no", e.clients?.name]))
+);
+
 // ===== Settings =====
 function renderSettings() {
   const s = settings || {};
   $("sPrefix").value = s.invoice_prefix ?? "INV-";
   $("sNextNum").value = s.next_invoice_number ?? 1;
+  $("sQPrefix").value = s.quote_prefix ?? "Q-";
+  $("sQNext").value = s.next_quote_number ?? 1;
   $("sTerms").value = s.payment_terms_days ?? 14;
   $("sVat").value = s.vat_rate ?? 20;
   $("sBank").value = s.bank_name || "";
@@ -836,6 +1338,8 @@ $("settingsForm").addEventListener("submit", async (e) => {
     id: 1,
     invoice_prefix: $("sPrefix").value.trim() || "INV-",
     next_invoice_number: Number($("sNextNum").value) || 1,
+    quote_prefix: $("sQPrefix").value.trim() || "Q-",
+    next_quote_number: Number($("sQNext").value) || 1,
     payment_terms_days: Number($("sTerms").value) || 14,
     vat_rate: Number($("sVat").value) || 0,
     bank_name: $("sBank").value.trim() || null,

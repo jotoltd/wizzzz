@@ -48,8 +48,10 @@
         <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
         <button class="nav-btn" data-tab="clients">Clients</button>
         <button class="nav-btn" data-tab="projects">Projects</button>
+        <button class="nav-btn" data-tab="quotes">Quotes</button>
         <button class="nav-btn" data-tab="invoices">Invoices</button>
         <button class="nav-btn" data-tab="expenses">Expenses</button>
+        <button class="nav-btn" data-tab="tasks">Tasks</button>
         <button class="nav-btn" data-tab="settings">Settings</button>
       </nav>
       <div class="sidebar-foot">
@@ -70,10 +72,16 @@
           <h2 class="panel-title">Dashboard</h2>
         </div>
         <div id="statCards" class="stats"></div>
-        <div class="dash-cols">
+        <h3 class="section-title">Collected — last 6 months</h3>
+        <div id="revChart" class="rev-chart"></div>
+        <div class="dash-cols dash-cols-3">
           <div>
             <h3 class="section-title">Outstanding invoices</h3>
             <div id="dashOutstanding" class="list"></div>
+          </div>
+          <div>
+            <h3 class="section-title">Tasks due</h3>
+            <div id="dashTasks" class="list"></div>
           </div>
           <div>
             <h3 class="section-title">Active projects</h3>
@@ -86,7 +94,11 @@
       <section id="clientsPanel" class="tab-panel">
         <div class="panel-head">
           <h2 class="panel-title">Clients</h2>
-          <button class="btn btn-primary btn-sm" id="addClientBtn">+ Add client</button>
+          <div class="panel-tools">
+            <input type="search" id="clientSearch" class="search-input" placeholder="Search clients…" />
+            <button class="btn btn-ghost btn-sm" id="exportClientsBtn">Export CSV</button>
+            <button class="btn btn-primary btn-sm" id="addClientBtn">+ Add client</button>
+          </div>
         </div>
         <div id="clientsList" class="grid"></div>
       </section>
@@ -100,11 +112,32 @@
         <div id="projectsList" class="grid"></div>
       </section>
 
+      <!-- QUOTES -->
+      <section id="quotesPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Quotes</h2>
+          <button class="btn btn-primary btn-sm" id="addQuoteBtn">+ New quote</button>
+        </div>
+        <div id="quotesList"></div>
+      </section>
+
       <!-- INVOICES -->
       <section id="invoicesPanel" class="tab-panel">
         <div class="panel-head">
           <h2 class="panel-title">Invoices</h2>
-          <button class="btn btn-primary btn-sm" id="addInvoiceBtn">+ New invoice</button>
+          <div class="panel-tools">
+            <input type="search" id="invoiceSearch" class="search-input" placeholder="Search invoices…" />
+            <select id="invoiceStatusFilter" class="search-input">
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="overdue">Overdue</option>
+              <option value="paid">Paid</option>
+              <option value="void">Void</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="exportInvoicesBtn">Export CSV</button>
+            <button class="btn btn-primary btn-sm" id="addInvoiceBtn">+ New invoice</button>
+          </div>
         </div>
         <div id="invoicesList"></div>
       </section>
@@ -113,9 +146,21 @@
       <section id="expensesPanel" class="tab-panel">
         <div class="panel-head">
           <h2 class="panel-title">Expenses</h2>
-          <button class="btn btn-primary btn-sm" id="addExpenseBtn">+ Add expense</button>
+          <div class="panel-tools">
+            <button class="btn btn-ghost btn-sm" id="exportExpensesBtn">Export CSV</button>
+            <button class="btn btn-primary btn-sm" id="addExpenseBtn">+ Add expense</button>
+          </div>
         </div>
         <div id="expensesList"></div>
+      </section>
+
+      <!-- TASKS -->
+      <section id="tasksPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Tasks</h2>
+          <button class="btn btn-primary btn-sm" id="addTaskBtn">+ Add task</button>
+        </div>
+        <div id="tasksList" class="list"></div>
       </section>
 
       <!-- SETTINGS -->
@@ -128,6 +173,8 @@
           <div class="form-grid">
             <label><span>Invoice prefix</span><input type="text" id="sPrefix" placeholder="INV-" /></label>
             <label><span>Next invoice number</span><input type="number" id="sNextNum" min="1" /></label>
+            <label><span>Quote prefix</span><input type="text" id="sQPrefix" placeholder="Q-" /></label>
+            <label><span>Next quote number</span><input type="number" id="sQNext" min="1" /></label>
             <label><span>Payment terms (days)</span><input type="number" id="sTerms" min="0" /></label>
             <label><span>Default VAT rate (%)</span><input type="number" id="sVat" min="0" step="0.1" /></label>
           </div>
@@ -242,6 +289,8 @@
 
         <div class="invoice-totals" id="invoiceTotals"></div>
 
+        <div id="billableHint" class="billable-hint" hidden></div>
+
         <label><span>Notes (shown on invoice)</span><textarea id="iNotes" rows="2"></textarea></label>
 
         <div id="paymentsBlock" hidden>
@@ -259,6 +308,105 @@
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- QUOTE MODAL -->
+  <div id="quoteModal" class="modal" hidden>
+    <div class="modal-card modal-wide">
+      <h3 id="quoteModalTitle" class="modal-title">New quote</h3>
+      <form id="quoteForm" class="modal-form">
+        <input type="hidden" id="quoteId" />
+        <div class="form-grid">
+          <label><span>Client</span><select id="qClient" required></select></label>
+          <label><span>Project (optional)</span><select id="qProject"></select></label>
+          <label><span>Issue date</span><input type="date" id="qIssue" required /></label>
+          <label><span>Valid until</span><input type="date" id="qValid" /></label>
+          <label><span>VAT rate (%)</span><input type="number" id="qVat" min="0" step="0.1" value="0" /></label>
+          <label><span>Status</span>
+            <select id="qStatus">
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="accepted">Accepted</option>
+              <option value="declined">Declined</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="items-head">
+          <span class="section-title" style="margin:0">Line items</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="qAddItemBtn">+ Add line</button>
+        </div>
+        <div id="qItemsList" class="items-list"></div>
+
+        <div class="invoice-totals" id="quoteTotals"></div>
+
+        <label><span>Notes (shown on quote)</span><textarea id="qNotes" rows="2"></textarea></label>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="printQuoteBtn">Print / PDF</button>
+          <button type="button" class="btn btn-primary btn-sm" id="convertQuoteBtn" hidden>Convert to invoice</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TASK MODAL -->
+  <div id="taskModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 id="taskModalTitle" class="modal-title">Add task</h3>
+      <form id="taskForm" class="modal-form">
+        <input type="hidden" id="taskId" />
+        <label><span>Task</span><input type="text" id="tTitle" required placeholder="e.g. Chase INV-0003" /></label>
+        <label><span>Due date</span><input type="date" id="tDue" /></label>
+        <label><span>Client (optional)</span><select id="tClient"></select></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CLIENT DETAIL MODAL -->
+  <div id="clientDetailModal" class="modal" hidden>
+    <div class="modal-card modal-wide">
+      <div class="detail-head">
+        <div>
+          <h3 id="cdName" class="modal-title" style="margin-bottom:4px"></h3>
+          <div id="cdMeta" class="card-meta"></div>
+        </div>
+        <span id="cdBadge"></span>
+      </div>
+      <div id="cdStats" class="stats" style="margin:16px 0"></div>
+
+      <h4 class="section-title">Projects</h4>
+      <div id="cdProjects" class="list"></div>
+
+      <h4 class="section-title">Invoices</h4>
+      <div id="cdInvoices" class="list"></div>
+
+      <h4 class="section-title">Activity</h4>
+      <div id="cdActivity" class="timeline"></div>
+      <form id="activityForm" class="activity-form">
+        <input type="hidden" id="actClientId" />
+        <select id="actType">
+          <option value="note">Note</option>
+          <option value="call">Call</option>
+          <option value="email">Email</option>
+          <option value="meeting">Meeting</option>
+        </select>
+        <input type="text" id="actBody" placeholder="Log a call, email, note…" required />
+        <button type="submit" class="btn btn-primary btn-sm">Log</button>
+      </form>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost btn-sm" id="cdEditBtn">Edit client</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-close>Close</button>
+      </div>
     </div>
   </div>
 

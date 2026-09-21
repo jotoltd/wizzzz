@@ -144,3 +144,81 @@ CREATE POLICY "expenses_auth_all" ON public.expenses
 DROP POLICY IF EXISTS "settings_auth_all" ON public.settings;
 CREATE POLICY "settings_auth_all" ON public.settings
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- ===== CRM additions round 2 =====
+-- Track which billable expenses have been invoiced
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS invoiced boolean NOT NULL DEFAULT false;
+
+-- Quote numbering alongside invoice numbering
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS quote_prefix text NOT NULL DEFAULT 'Q-';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS next_quote_number int NOT NULL DEFAULT 1;
+
+-- ===== Quotes =====
+CREATE TABLE IF NOT EXISTS public.quotes (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_number    text NOT NULL,
+  client_id       uuid REFERENCES public.clients(id) ON DELETE SET NULL,
+  project_id      uuid REFERENCES public.projects(id) ON DELETE SET NULL,
+  status          text NOT NULL DEFAULT 'draft',   -- draft | sent | accepted | declined
+  issue_date      date NOT NULL DEFAULT current_date,
+  valid_until     date,
+  vat_rate        numeric NOT NULL DEFAULT 0,
+  notes           text,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS quotes_client_id_idx ON public.quotes(client_id);
+
+CREATE TABLE IF NOT EXISTS public.quote_items (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quote_id    uuid NOT NULL REFERENCES public.quotes(id) ON DELETE CASCADE,
+  description text NOT NULL,
+  qty         numeric NOT NULL DEFAULT 1,
+  rate        numeric NOT NULL DEFAULT 0,
+  sort        int NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS quote_items_quote_id_idx ON public.quote_items(quote_id);
+
+-- ===== Client activity log =====
+CREATE TABLE IF NOT EXISTS public.activities (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id   uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+  type        text NOT NULL DEFAULT 'note',        -- note | call | email | meeting
+  body        text NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS activities_client_id_idx ON public.activities(client_id);
+
+-- ===== Tasks / follow-ups =====
+CREATE TABLE IF NOT EXISTS public.tasks (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       text NOT NULL,
+  due_date    date,
+  done        boolean NOT NULL DEFAULT false,
+  client_id   uuid REFERENCES public.clients(id) ON DELETE SET NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- ===== RLS =====
+ALTER TABLE public.quotes      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quote_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activities  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks       ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "quotes_auth_all" ON public.quotes;
+CREATE POLICY "quotes_auth_all" ON public.quotes
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "quote_items_auth_all" ON public.quote_items;
+CREATE POLICY "quote_items_auth_all" ON public.quote_items
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "activities_auth_all" ON public.activities;
+CREATE POLICY "activities_auth_all" ON public.activities
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "tasks_auth_all" ON public.tasks;
+CREATE POLICY "tasks_auth_all" ON public.tasks
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);

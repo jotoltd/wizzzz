@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WIZZZ · Admin</title>
+  <title>WIZZZ · CRM</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,8 +20,8 @@
   <section id="login" class="login">
     <div class="login-card">
       <img src="logo.svg" alt="WIZZZ" class="login-logo" />
-      <h1 class="login-title">Admin</h1>
-      <p class="login-sub">Sign in to manage clients & projects.</p>
+      <h1 class="login-title">CRM</h1>
+      <p class="login-sub">Sign in to manage clients, projects & invoices.</p>
       <form id="loginForm" class="login-form">
         <label>
           <span>Email</span>
@@ -39,25 +39,51 @@
 
   <!-- APP -->
   <div id="app" class="app" hidden>
-    <header class="topbar">
-      <div class="topbar-left">
-        <img src="logo.svg" alt="WIZZZ" class="topbar-logo" />
-        <span class="topbar-tag">Admin</span>
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.svg" alt="WIZZZ" class="sidebar-logo" />
+        <span class="topbar-tag">CRM</span>
       </div>
-      <div class="topbar-right">
+      <nav class="nav">
+        <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="nav-btn" data-tab="clients">Clients</button>
+        <button class="nav-btn" data-tab="projects">Projects</button>
+        <button class="nav-btn" data-tab="invoices">Invoices</button>
+        <button class="nav-btn" data-tab="expenses">Expenses</button>
+        <button class="nav-btn" data-tab="settings">Settings</button>
+      </nav>
+      <div class="sidebar-foot">
         <span id="userEmail" class="user-email"></span>
         <button id="logoutBtn" class="btn btn-ghost btn-sm">Sign out</button>
       </div>
-    </header>
+    </aside>
 
-    <nav class="tabs">
-      <button class="tab active" data-tab="clients">Clients</button>
-      <button class="tab" data-tab="projects">Projects</button>
-    </nav>
+    <main class="content">
+      <div id="schemaBanner" class="schema-banner" hidden>
+        <strong>Database update needed.</strong> Run the latest <code>schema.sql</code> in your
+        Supabase SQL editor to enable invoices, payments, expenses & settings.
+      </div>
 
-    <main class="panel">
+      <!-- DASHBOARD -->
+      <section id="dashboardPanel" class="tab-panel active">
+        <div class="panel-head">
+          <h2 class="panel-title">Dashboard</h2>
+        </div>
+        <div id="statCards" class="stats"></div>
+        <div class="dash-cols">
+          <div>
+            <h3 class="section-title">Outstanding invoices</h3>
+            <div id="dashOutstanding" class="list"></div>
+          </div>
+          <div>
+            <h3 class="section-title">Active projects</h3>
+            <div id="dashProjects" class="list"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- CLIENTS -->
-      <section id="clientsPanel" class="tab-panel active">
+      <section id="clientsPanel" class="tab-panel">
         <div class="panel-head">
           <h2 class="panel-title">Clients</h2>
           <button class="btn btn-primary btn-sm" id="addClientBtn">+ Add client</button>
@@ -73,6 +99,52 @@
         </div>
         <div id="projectsList" class="grid"></div>
       </section>
+
+      <!-- INVOICES -->
+      <section id="invoicesPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Invoices</h2>
+          <button class="btn btn-primary btn-sm" id="addInvoiceBtn">+ New invoice</button>
+        </div>
+        <div id="invoicesList"></div>
+      </section>
+
+      <!-- EXPENSES -->
+      <section id="expensesPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Expenses</h2>
+          <button class="btn btn-primary btn-sm" id="addExpenseBtn">+ Add expense</button>
+        </div>
+        <div id="expensesList"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settingsPanel" class="tab-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Settings</h2>
+        </div>
+        <form id="settingsForm" class="settings-form">
+          <h3 class="section-title">Invoice defaults</h3>
+          <div class="form-grid">
+            <label><span>Invoice prefix</span><input type="text" id="sPrefix" placeholder="INV-" /></label>
+            <label><span>Next invoice number</span><input type="number" id="sNextNum" min="1" /></label>
+            <label><span>Payment terms (days)</span><input type="number" id="sTerms" min="0" /></label>
+            <label><span>Default VAT rate (%)</span><input type="number" id="sVat" min="0" step="0.1" /></label>
+          </div>
+          <h3 class="section-title">Payment details (shown on invoices)</h3>
+          <div class="form-grid">
+            <label><span>Bank name</span><input type="text" id="sBank" /></label>
+            <label><span>Account name</span><input type="text" id="sAccName" placeholder="Gedker Ltd" /></label>
+            <label><span>Sort code</span><input type="text" id="sSort" placeholder="00-00-00" /></label>
+            <label><span>Account number</span><input type="text" id="sAccNum" /></label>
+          </div>
+          <label><span>Invoice footer notes</span><textarea id="sNotes" rows="3" placeholder="Payment due within 14 days..."></textarea></label>
+          <div>
+            <button type="submit" class="btn btn-primary btn-sm">Save settings</button>
+            <span id="settingsSaved" class="saved-note" hidden>Saved.</span>
+          </div>
+        </form>
+      </section>
     </main>
   </div>
 
@@ -86,6 +158,7 @@
         <label><span>Company</span><input type="text" id="cCompany" /></label>
         <label><span>Email</span><input type="email" id="cEmail" /></label>
         <label><span>Phone</span><input type="text" id="cPhone" /></label>
+        <label><span>Billing address</span><textarea id="cAddress" rows="2"></textarea></label>
         <label><span>Status</span>
           <select id="cStatus">
             <option value="active">Active</option>
@@ -131,6 +204,114 @@
         <label><span>Budget (£)</span><input type="number" id="pBudget" min="0" step="50" /></label>
         <label><span>Due date</span><input type="date" id="pDue" /></label>
         <label><span>Brief</span><textarea id="pBrief" rows="3"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- INVOICE MODAL -->
+  <div id="invoiceModal" class="modal" hidden>
+    <div class="modal-card modal-wide">
+      <h3 id="invoiceModalTitle" class="modal-title">New invoice</h3>
+      <form id="invoiceForm" class="modal-form">
+        <input type="hidden" id="invoiceId" />
+        <div class="form-grid">
+          <label><span>Client</span><select id="iClient" required></select></label>
+          <label><span>Project (optional)</span><select id="iProject"></select></label>
+          <label><span>Issue date</span><input type="date" id="iIssue" required /></label>
+          <label><span>Due date</span><input type="date" id="iDue" /></label>
+          <label><span>VAT rate (%)</span><input type="number" id="iVat" min="0" step="0.1" value="0" /></label>
+          <label><span>Status</span>
+            <select id="iStatus">
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="void">Void</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="items-head">
+          <span class="section-title" style="margin:0">Line items</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="addItemBtn">+ Add line</button>
+        </div>
+        <div id="itemsList" class="items-list"></div>
+
+        <div class="invoice-totals" id="invoiceTotals"></div>
+
+        <label><span>Notes (shown on invoice)</span><textarea id="iNotes" rows="2"></textarea></label>
+
+        <div id="paymentsBlock" hidden>
+          <div class="items-head">
+            <span class="section-title" style="margin:0">Payments</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="addPaymentBtn">+ Record payment</button>
+          </div>
+          <div id="paymentsList" class="list"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="printInvoiceBtn">Print / PDF</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PAYMENT MODAL -->
+  <div id="paymentModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 class="modal-title">Record payment</h3>
+      <form id="paymentForm" class="modal-form">
+        <input type="hidden" id="payInvoiceId" />
+        <label><span>Amount (£)</span><input type="number" id="payAmount" min="0.01" step="0.01" required /></label>
+        <label><span>Date</span><input type="date" id="payDate" required /></label>
+        <label><span>Method</span>
+          <select id="payMethod">
+            <option value="bank">Bank transfer</option>
+            <option value="card">Card</option>
+            <option value="cash">Cash</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label><span>Note</span><input type="text" id="payNote" /></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EXPENSE MODAL -->
+  <div id="expenseModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 id="expenseModalTitle" class="modal-title">Add expense</h3>
+      <form id="expenseForm" class="modal-form">
+        <input type="hidden" id="expenseId" />
+        <label><span>Date</span><input type="date" id="eDate" required /></label>
+        <label><span>Category</span>
+          <select id="eCategory">
+            <option value="software">Software</option>
+            <option value="hardware">Hardware</option>
+            <option value="travel">Travel</option>
+            <option value="subs">Subscriptions</option>
+            <option value="marketing">Marketing</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label><span>Vendor</span><input type="text" id="eVendor" /></label>
+        <label><span>Description</span><input type="text" id="eDesc" /></label>
+        <label><span>Amount (£)</span><input type="number" id="eAmount" min="0" step="0.01" required /></label>
+        <label class="check-row">
+          <input type="checkbox" id="eBillable" />
+          <span>Billable to a client</span>
+        </label>
+        <label><span>Client (if billable)</span><select id="eClient"></select></label>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm">Save</button>

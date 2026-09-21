@@ -688,3 +688,41 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
   .blob, .marquee-track, .gradient-text { animation: none !important; }
   .js .reveal { opacity: 1; transform: none; }
 }
+
+/* ===== FAQ ===== */
+.faq { max-width: var(--maxw); }
+.faq-list { display: grid; gap: 12px; max-width: 820px; }
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 247, 242, 0.03);
+  overflow: hidden;
+  transition: border-color 0.25s ease;
+}
+.faq-item[open], .faq-item:hover { border-color: rgba(255, 179, 71, 0.4); }
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 20px 24px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  font-size: 1.4rem;
+  color: var(--flame);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item p {
+  padding: 0 24px 20px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 62ch;
+}

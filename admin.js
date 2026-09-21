@@ -160,6 +160,16 @@ function quoteDisplayStatus(q) {
   return q.status;
 }
 
+// ===== Toast =====
+let toastTimer = null;
+function notify(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2500);
+}
+
 // ===== Dashboard =====
 function renderDashboard() {
   const month = todayISO().slice(0, 7);
@@ -188,6 +198,7 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Active clients</div><div class="stat-value">${activeClients}</div><div class="stat-sub">of ${clients.length} total</div></div>
     <div class="stat-card"><div class="stat-label">Active projects</div><div class="stat-value">${activeProjects}</div><div class="stat-sub">in progress / review</div></div>
     <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value">${money(expensesMonth)}</div><div class="stat-sub">this month</div></div>
+    <div class="stat-card"><div class="stat-label">Profit</div><div class="stat-value">${money(collectedMonth - expensesMonth)}</div><div class="stat-sub">collected − expenses, this month</div></div>
   `;
 
   // revenue chart — payments collected per month, last 6 months
@@ -328,7 +339,7 @@ $("clientsList").addEventListener("click", async (e) => {
   const invId = e.target.dataset.invClient;
   if (viewId) openClientDetail(viewId);
   if (editId) openClientModal(clients.find((c) => c.id === editId));
-  if (invId) openInvoiceModal(null, invId);
+  if (invId) openInvoiceModal(null, { clientId: invId });
   if (delId) {
     if (!confirm("Delete this client and their projects?")) return;
     const { error } = await sb.from("clients").delete().eq("id", delId);
@@ -449,8 +460,25 @@ $("activityForm").addEventListener("submit", async (e) => {
 });
 
 // ===== Projects =====
+let projView = "grid";
+const PROJ_STATUSES = ["planning", "in_progress", "review", "done"];
+
+$("viewGridBtn").addEventListener("click", () => setProjView("grid"));
+$("viewBoardBtn").addEventListener("click", () => setProjView("board"));
+
+function setProjView(v) {
+  projView = v;
+  $("viewGridBtn").classList.toggle("active", v === "grid");
+  $("viewBoardBtn").classList.toggle("active", v === "board");
+  renderProjects();
+}
+
 function renderProjects() {
   const list = $("projectsList");
+  const board = $("projectsBoard");
+  list.hidden = projView !== "grid";
+  board.hidden = projView !== "board";
+  if (projView === "board") return renderProjectsBoard();
   if (!projects.length) {
     list.innerHTML = `<p class="empty">No projects yet. Add your first one.</p>`;
     return;
@@ -467,6 +495,7 @@ function renderProjects() {
       <span class="badge ${p.status}">${label(p.status)}</span>
       ${p.brief ? `<p class="card-meta" style="margin-top:10px">${esc(p.brief)}</p>` : ""}
       <div class="card-actions">
+        ${p.client_id ? `<button class="btn btn-ghost btn-sm" data-inv-project="${p.id}">+ Invoice</button>` : ""}
         <button class="btn btn-ghost btn-sm" data-edit-project="${p.id}">Edit</button>
         <button class="btn btn-ghost btn-sm" data-del-project="${p.id}">Delete</button>
       </div>
@@ -476,7 +505,16 @@ function renderProjects() {
 $("projectsList").addEventListener("click", async (e) => {
   const editId = e.target.dataset.editProject;
   const delId = e.target.dataset.delProject;
+  const invId = e.target.dataset.invProject;
   if (editId) openProjectModal(projects.find((p) => p.id === editId));
+  if (invId) {
+    const p = projects.find((x) => x.id === invId);
+    openInvoiceModal(null, {
+      clientId: p.client_id,
+      projectId: p.id,
+      items: [{ description: p.title, qty: 1, rate: Number(p.budget) || 0 }],
+    });
+  }
   if (delId) {
     if (!confirm("Delete this project?")) return;
     const { error } = await sb.from("projects").delete().eq("id", delId);
@@ -522,6 +560,48 @@ $("projectForm").addEventListener("submit", async (e) => {
     : await sb.from("projects").insert(payload);
   if (error) return alert(error.message);
   $("projectModal").hidden = true;
+  loadAll();
+});
+
+// --- kanban board ---
+function renderProjectsBoard() {
+  const board = $("projectsBoard");
+  board.innerHTML = PROJ_STATUSES.map((status) => {
+    const cards = projects.filter((p) => p.status === status);
+    return `<div class="kanban-col" data-col="${status}">
+      <div class="kanban-col-title"><span>${label(status)}</span><span>${cards.length}</span></div>
+      ${cards.map((p) => `<div class="kanban-card" draggable="true" data-proj-id="${p.id}">
+        ${esc(p.title)}
+        <div class="kc-client">${esc(p.clients?.name || "No client")}</div>
+        ${p.due_date ? `<div class="kc-due">Due ${fmtDate(p.due_date)}</div>` : ""}
+      </div>`).join("")}
+    </div>`;
+  }).join("");
+}
+
+let dragProjId = null;
+$("projectsBoard").addEventListener("dragstart", (e) => {
+  dragProjId = e.target.dataset.projId;
+});
+$("projectsBoard").addEventListener("dragover", (e) => {
+  const col = e.target.closest(".kanban-col");
+  if (!col) return;
+  e.preventDefault();
+  document.querySelectorAll(".kanban-col").forEach((c) => c.classList.toggle("drag-over", c === col));
+});
+$("projectsBoard").addEventListener("dragleave", (e) => {
+  if (e.target.classList?.contains("kanban-col")) e.target.classList.remove("drag-over");
+});
+$("projectsBoard").addEventListener("drop", async (e) => {
+  const col = e.target.closest(".kanban-col");
+  document.querySelectorAll(".kanban-col").forEach((c) => c.classList.remove("drag-over"));
+  if (!col || !dragProjId) return;
+  e.preventDefault();
+  const p = projects.find((x) => x.id === dragProjId);
+  if (!p || p.status === col.dataset.col) return;
+  const { error } = await sb.from("projects").update({ status: col.dataset.col }).eq("id", p.id);
+  if (error) return alert(error.message);
+  notify(`${p.title} → ${label(col.dataset.col)}`);
   loadAll();
 });
 
@@ -725,6 +805,7 @@ function renderInvoices() {
         <td class="right money">${money(t.total)}</td>
         <td class="right money">${t.balance > 0 ? money(t.balance) : "—"}</td>
         <td><div class="row-actions">
+          ${ds === "overdue" ? `<button class="btn btn-ghost btn-sm" data-chase-invoice="${inv.id}">Chase</button>` : ""}
           ${t.balance > 0 && inv.status !== "void" ? `<button class="btn btn-ghost btn-sm" data-pay-invoice="${inv.id}">Payment</button>` : ""}
           <button class="btn btn-ghost btn-sm" data-edit-invoice="${inv.id}">Edit</button>
           <button class="btn btn-danger btn-sm" data-del-invoice="${inv.id}">Delete</button>
@@ -738,8 +819,20 @@ $("invoicesList").addEventListener("click", async (e) => {
   const editId = e.target.dataset.editInvoice;
   const delId = e.target.dataset.delInvoice;
   const payId = e.target.dataset.payInvoice;
+  const chaseId = e.target.dataset.chaseInvoice;
   if (editId) openInvoiceModal(invoices.find((i) => i.id === editId));
   if (payId) openPaymentModal(payId);
+  if (chaseId) {
+    const inv = invoices.find((i) => i.id === chaseId);
+    const { error } = await sb.from("tasks").insert({
+      title: `Chase ${inv.invoice_number} — ${inv.clients?.name || "client"}`,
+      due_date: addDays(todayISO(), 2),
+      client_id: inv.client_id,
+    });
+    if (error) return alert(error.message);
+    notify(`Chase task added for ${inv.invoice_number}`);
+    loadAll();
+  }
   if (delId) {
     if (!confirm("Delete this invoice and its payments?")) return;
     const { error } = await sb.from("invoices").delete().eq("id", delId);
@@ -861,13 +954,13 @@ function refreshBillableHint() {
   });
 }
 
-function openInvoiceModal(inv = null, prefillClientId = null) {
+function openInvoiceModal(inv = null, prefill = null) {
   if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
   $("invoiceModalTitle").textContent = inv ? `Invoice ${inv.invoice_number}` : "New invoice";
   $("invoiceId").value = inv?.id || "";
-  $("iClient").innerHTML = clientOptions(inv?.client_id || prefillClientId);
+  $("iClient").innerHTML = clientOptions(inv?.client_id || prefill?.clientId);
   $("iClient").dispatchEvent(new Event("change"));
-  $("iProject").value = inv?.project_id || "";
+  $("iProject").value = inv?.project_id || prefill?.projectId || "";
   $("iIssue").value = inv?.issue_date || todayISO();
   const terms = settings?.payment_terms_days ?? 14;
   $("iDue").value = inv?.due_date || addDays($("iIssue").value, terms);
@@ -877,13 +970,15 @@ function openInvoiceModal(inv = null, prefillClientId = null) {
 
   invEditor.items = inv
     ? (inv.invoice_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate }))
-    : [{ description: "", qty: 1, rate: 0 }];
+    : (prefill?.items?.length ? prefill.items : [{ description: "", qty: 1, rate: 0 }]);
   if (!invEditor.items.length) invEditor.items.push({ description: "", qty: 1, rate: 0 });
   invEditor.render();
 
   // payments block only for saved invoices
   $("paymentsBlock").hidden = !inv;
   $("printInvoiceBtn").hidden = !inv;
+  $("dupInvoiceBtn").hidden = !inv;
+  $("emailInvoiceBtn").hidden = !inv || !inv?.clients?.email;
   if (inv) renderPaymentsList(inv);
 
   refreshBillableHint();
@@ -1135,6 +1230,135 @@ ${bankBlock}
   win.onload = doPrint;
   setTimeout(doPrint, 600);
 }
+
+// ===== Email invoice / quote =====
+function emailDoc(doc, kind) {
+  const isQuote = kind === "quote";
+  const number = isQuote ? doc.quote_number : doc.invoice_number;
+  const items = isQuote ? doc.quote_items : doc.invoice_items;
+  const t = itemsTotals(items, doc.vat_rate);
+  const client = doc.clients || {};
+  const s = settings || {};
+  const dateLine = isQuote
+    ? `valid until ${fmtDate(doc.valid_until)}`
+    : `due ${fmtDate(doc.due_date)}`;
+  const bank = (!isQuote && (s.bank_name || s.account_number))
+    ? `\n\nPayment details:\nBank: ${s.bank_name || ""}\nName: ${s.account_name || "Gedker Ltd"}\nSort code: ${s.sort_code || ""}\nAccount: ${s.account_number || ""}\nReference: ${number}`
+    : "";
+  const subject = `${isQuote ? "Quote" : "Invoice"} ${number} from WIZZZ`;
+  const body = `Hi ${client.name || "there"},\n\nPlease find ${isQuote ? "quote" : "invoice"} ${number} attached — ${money(t.total)}, ${dateLine}.${bank}\n\nThanks,\nWIZZZ\nhello@wizzz.co.uk · wizzz.co.uk`;
+  window.location.href = `mailto:${client.email || ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+$("emailInvoiceBtn").addEventListener("click", () => {
+  const inv = invoices.find((i) => i.id === $("invoiceId").value);
+  if (inv) emailDoc(inv, "invoice");
+});
+$("emailQuoteBtn").addEventListener("click", () => {
+  const q = quotes.find((x) => x.id === $("quoteId").value);
+  if (q) emailDoc(q, "quote");
+});
+
+// ===== Duplicate invoice (retainers) =====
+$("dupInvoiceBtn").addEventListener("click", () => {
+  const inv = invoices.find((i) => i.id === $("invoiceId").value);
+  if (!inv) return;
+  $("invoiceModal").hidden = true;
+  openInvoiceModal(null, {
+    clientId: inv.client_id,
+    projectId: inv.project_id,
+    items: (inv.invoice_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate })),
+  });
+  // carry over VAT + notes
+  $("iVat").value = Number(inv.vat_rate);
+  $("iNotes").value = inv.notes || "";
+  invEditor.render();
+  notify("Invoice duplicated — save to create it");
+});
+
+// ===== Client statement =====
+$("cdStatementBtn").addEventListener("click", () => {
+  const c = clients.find((x) => x.id === $("actClientId").value);
+  if (c) printStatement(c);
+});
+
+function printStatement(client) {
+  const cInvoices = invoices
+    .filter((i) => i.client_id === client.id)
+    .sort((a, b) => (a.issue_date || "").localeCompare(b.issue_date || ""));
+  let totInv = 0, totPaid = 0;
+  const rows = cInvoices.map((inv) => {
+    const t = invoiceTotals(inv);
+    totInv += t.total; totPaid += t.paid;
+    return `<tr>
+      <td>${esc(inv.invoice_number)}</td><td>${fmtDate(inv.issue_date)}</td><td>${fmtDate(inv.due_date)}</td>
+      <td>${label(displayStatus(inv))}</td>
+      <td class="right">${money(t.total)}</td><td class="right">${money(t.paid)}</td><td class="right">${money(Math.max(t.balance, 0))}</td>
+    </tr>`;
+  }).join("");
+  const outstanding = totInv - totPaid;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Statement · ${esc(client.name)} · WIZZZ</title>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Space Grotesk",sans-serif; color:#0a0604; background:#fff; padding:40px 60px; max-width:800px; margin:0 auto; line-height:1.6; }
+  .letterhead { display:flex; align-items:center; justify-content:space-between; padding-bottom:24px; border-bottom:3px solid; border-image:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f) 1; margin-bottom:32px; }
+  .letterhead-logo { font-family:"Metamorphous",serif; font-size:36px; letter-spacing:4px; background:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .letterhead-meta { text-align:right; font-size:12px; color:#666; }
+  .doc-title { font-family:"Metamorphous",serif; font-size:28px; color:#ff4d00; margin-bottom:8px; }
+  .sub { color:#666; font-size:13px; margin-bottom:32px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:24px; }
+  th { text-align:left; padding:12px; border-bottom:2px solid #ff4d00; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  th.right, td.right { text-align:right; }
+  td { padding:12px; border-bottom:1px solid #eee; }
+  .totals { width:280px; margin-left:auto; font-size:14px; }
+  .totals td { padding:8px 12px; border:none; }
+  .totals .total-row td { border-top:2px solid #ff4d00; border-bottom:2px solid #ff4d00; font-family:"Metamorphous",serif; font-size:18px; padding:14px 12px; }
+  .footer { margin-top:48px; padding-top:16px; border-top:1px solid #eee; font-size:11px; color:#999; text-align:center; }
+  @media print { body { padding:30px 40px; } }
+</style></head><body>
+<div class="letterhead">
+  <div class="letterhead-logo">WIZZZ</div>
+  <div class="letterhead-meta">hello@wizzz.co.uk<br>wizzz.co.uk<br>A trading name of Gedker Ltd</div>
+</div>
+<div class="doc-title">STATEMENT</div>
+<div class="sub">${esc(client.name)}${client.company ? " · " + esc(client.company) : ""} · as at ${fmtDate(todayISO())}</div>
+<table>
+  <tr><th>Invoice</th><th>Issued</th><th>Due</th><th>Status</th><th class="right">Total</th><th class="right">Paid</th><th class="right">Balance</th></tr>
+  ${rows || `<tr><td colspan="7" style="color:#999">No invoices on record.</td></tr>`}
+</table>
+<table class="totals">
+  <tr><td>Total invoiced</td><td class="right">${money(totInv)}</td></tr>
+  <tr><td>Total paid</td><td class="right">${money(totPaid)}</td></tr>
+  <tr class="total-row"><td>Outstanding</td><td class="right">${money(outstanding)}</td></tr>
+</table>
+<div class="footer">WIZZZ · A trading name of Gedker Ltd · hello@wizzz.co.uk · wizzz.co.uk</div>
+</body></html>`;
+
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (!win) return alert("Popup blocked — allow popups to print statements.");
+  win.document.write(html);
+  win.document.close();
+  let printed = false;
+  const doPrint = () => { if (!printed) { printed = true; win.print(); } };
+  win.onload = doPrint;
+  setTimeout(doPrint, 600);
+}
+
+// ===== Full backup =====
+$("backupBtn").addEventListener("click", () => {
+  const data = {
+    exported_at: new Date().toISOString(),
+    clients, projects, invoices, quotes, expenses, tasks, activities, settings,
+  };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = `wizzz-backup-${todayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  notify("Backup downloaded");
+});
 
 // ===== Expenses =====
 function renderExpenses() {

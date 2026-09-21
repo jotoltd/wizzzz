@@ -107,9 +107,16 @@
       <section id="projectsPanel" class="tab-panel">
         <div class="panel-head">
           <h2 class="panel-title">Projects</h2>
-          <button class="btn btn-primary btn-sm" id="addProjectBtn">+ Add project</button>
+          <div class="panel-tools">
+            <div class="view-toggle">
+              <button class="vt-btn active" id="viewGridBtn">Grid</button>
+              <button class="vt-btn" id="viewBoardBtn">Board</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="addProjectBtn">+ Add project</button>
+          </div>
         </div>
         <div id="projectsList" class="grid"></div>
+        <div id="projectsBoard" class="kanban" hidden></div>
       </section>
 
       <!-- QUOTES -->
@@ -189,6 +196,10 @@
           <div>
             <button type="submit" class="btn btn-primary btn-sm">Save settings</button>
             <span id="settingsSaved" class="saved-note" hidden>Saved.</span>
+          </div>
+          <h3 class="section-title">Data</h3>
+          <div>
+            <button type="button" class="btn btn-ghost btn-sm" id="backupBtn">Export full backup (JSON)</button>
           </div>
         </form>
       </section>
@@ -302,6 +313,8 @@
         </div>
 
         <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="emailInvoiceBtn" hidden>Email</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="dupInvoiceBtn" hidden>Duplicate</button>
           <button type="button" class="btn btn-ghost btn-sm" id="printInvoiceBtn">Print / PDF</button>
           <span style="flex:1"></span>
           <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
@@ -344,6 +357,7 @@
         <label><span>Notes (shown on quote)</span><textarea id="qNotes" rows="2"></textarea></label>
 
         <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="emailQuoteBtn" hidden>Email</button>
           <button type="button" class="btn btn-ghost btn-sm" id="printQuoteBtn">Print / PDF</button>
           <button type="button" class="btn btn-primary btn-sm" id="convertQuoteBtn" hidden>Convert to invoice</button>
           <span style="flex:1"></span>
@@ -404,6 +418,7 @@
       </form>
 
       <div class="modal-actions">
+        <button type="button" class="btn btn-ghost btn-sm" id="cdStatementBtn">Statement</button>
         <button type="button" class="btn btn-ghost btn-sm" id="cdEditBtn">Edit client</button>
         <button type="button" class="btn btn-ghost btn-sm" data-close>Close</button>
       </div>
@@ -467,6 +482,8 @@
       </form>
     </div>
   </div>
+
+  <div id="toast" class="toast" hidden></div>
 
   <script type="module" src="admin.js"></script>
 </body>

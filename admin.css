@@ -218,6 +218,44 @@ select.search-input { min-width: 140px; }
 }
 .activity-form select option { background: #14090a; }
 
+/* toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #14090a; border: 1px solid rgba(255, 138, 0, 0.5); border-radius: 999px;
+  padding: 12px 22px; font-size: 0.9rem; font-weight: 600; z-index: 200;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  animation: toastIn 0.2s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } }
+
+/* view toggle */
+.view-toggle { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.vt-btn {
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  font-family: inherit; font-weight: 600; font-size: 0.85rem; padding: 9px 16px;
+}
+.vt-btn.active { background: linear-gradient(90deg, var(--flame), var(--orange), var(--red)); color: #fff; }
+
+/* kanban board */
+.kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+.kanban-col {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px; min-height: 160px;
+}
+.kanban-col.drag-over { border-color: var(--flame); background: rgba(255, 138, 0, 0.06); }
+.kanban-col-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between;
+}
+.kanban-card {
+  background: rgba(0,0,0,0.35); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 10px; cursor: grab; font-size: 0.9rem;
+}
+.kanban-card:hover { border-color: rgba(255, 138, 0, 0.4); }
+.kanban-card:active { cursor: grabbing; }
+.kanban-card .kc-client { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+.kanban-card .kc-due { color: var(--flame); font-size: 0.78rem; margin-top: 2px; }
+
 .list { display: grid; gap: 10px; }
 .list-row {
   display: flex; align-items: center; gap: 14px;
@@ -358,6 +396,7 @@ td .row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap:
   .sidebar-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
   .content { padding: 24px 18px 60px; }
   .dash-cols, .dash-cols-3 { grid-template-columns: 1fr; }
+  .kanban { grid-template-columns: 1fr 1fr; }
   .activity-form { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .item-row { grid-template-columns: 1fr 60px 80px 70px 30px; }

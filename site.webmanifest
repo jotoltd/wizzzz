@@ -1,0 +1,13 @@
+{
+  "name": "WIZZZ · Websites. iOS Apps. Ads.",
+  "short_name": "WIZZZ",
+  "description": "One-man agency crafting bold websites, iOS apps, and ad campaigns.",
+  "start_url": "/",
+  "display": "browser",
+  "theme_color": "#0a0604",
+  "background_color": "#0a0604",
+  "icons": [
+    { "src": "/favicon-48.png", "sizes": "48x48", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

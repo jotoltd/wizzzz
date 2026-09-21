@@ -27,6 +27,10 @@ let clientQuery = "";
 let invoiceQuery = "";
 let invoiceStatusFilter = "";
 let pendingExpenseIds = [];
+let pendingTimeIds = [];
+let timeEntries = [];
+let clientUsers = [];
+let pendingCreditNote = false;
 
 // ===== Auth =====
 $("loginForm").addEventListener("submit", async (e) => {
@@ -79,7 +83,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 
 // ===== Loaders =====
 async function loadAll() {
-  const [c, p, inv, ex, st, q, act, tk] = await Promise.all([
+  const [c, p, inv, ex, st, q, act, tk, te, cu] = await Promise.all([
     sb.from("clients").select("*").order("created_at", { ascending: false }),
     sb.from("projects").select("*, clients(name)").order("created_at", { ascending: false }),
     sb.from("invoices").select("*, clients(name,company,email,address), invoice_items(*), payments(*)").order("created_at", { ascending: false }),
@@ -88,10 +92,12 @@ async function loadAll() {
     sb.from("quotes").select("*, clients(name,company,email,address), quote_items(*)").order("created_at", { ascending: false }),
     sb.from("activities").select("*").order("created_at", { ascending: false }),
     sb.from("tasks").select("*, clients(name)").order("due_date", { ascending: true }),
+    sb.from("time_entries").select("*, projects(title,client_id)").order("entry_date", { ascending: false }),
+    sb.from("client_users").select("*"),
   ]);
 
   // detect missing CRM tables (old schema)
-  schemaMissing = [inv, ex, st, q, act, tk].some((r) => r.error && r.error.code === "42P01");
+  schemaMissing = [inv, ex, st, q, act, tk, te, cu].some((r) => r.error && r.error.code === "42P01");
   $("schemaBanner").hidden = !schemaMissing;
 
   if (c.error) console.error(c.error); else clients = c.data || [];
@@ -101,6 +107,8 @@ async function loadAll() {
   quotes = q.error ? [] : q.data || [];
   activities = act.error ? [] : act.data || [];
   tasks = tk.error ? [] : tk.data || [];
+  timeEntries = te.error ? [] : te.data || [];
+  clientUsers = cu.error ? [] : cu.data || [];
   settings = st.data || null;
 
   // bootstrap the settings row if it's missing, so invoice numbering always increments
@@ -143,6 +151,12 @@ function nextInvoiceNumber() {
   return prefix + String(n).padStart(4, "0");
 }
 
+function nextCreditNumber() {
+  const prefix = settings?.credit_prefix ?? "CN-";
+  const n = settings?.next_credit_number ?? 1;
+  return prefix + String(n).padStart(4, "0");
+}
+
 function nextQuoteNumber() {
   const prefix = settings?.quote_prefix ?? "Q-";
   const n = settings?.next_quote_number ?? 1;
@@ -176,6 +190,7 @@ function renderDashboard() {
   let outstanding = 0, overdueCount = 0, collectedMonth = 0, expensesMonth = 0;
 
   invoices.forEach((inv) => {
+    if (inv.doc_type === "credit_note") return; // credit notes are liabilities, not receivables
     const t = invoiceTotals(inv);
     const ds = displayStatus(inv);
     if ((ds === "sent" || ds === "overdue") && t.balance > 0) outstanding += t.balance;
@@ -231,7 +246,7 @@ function renderDashboard() {
     : `<p class="empty">Nothing due. All clear.</p>`;
 
   const dueList = invoices
-    .filter((i) => ["sent", "overdue"].includes(displayStatus(i)) && invoiceTotals(i).balance > 0)
+    .filter((i) => i.doc_type !== "credit_note" && ["sent", "overdue"].includes(displayStatus(i)) && invoiceTotals(i).balance > 0)
     .sort((a, b) => (a.due_date || "9999").localeCompare(b.due_date || "9999"))
     .slice(0, 8);
 
@@ -400,7 +415,7 @@ function openClientDetail(id) {
   const cProjects = projects.filter((p) => p.client_id === id);
   const cInvoices = invoices.filter((i) => i.client_id === id);
   const invoiced = cInvoices.reduce((s, i) => s + invoiceTotals(i).total, 0);
-  const owed = cInvoices.reduce((s, i) => ["sent", "overdue"].includes(displayStatus(i)) ? s + invoiceTotals(i).balance : s, 0);
+  const owed = cInvoices.reduce((s, i) => i.doc_type !== "credit_note" && ["sent", "overdue"].includes(displayStatus(i)) ? s + invoiceTotals(i).balance : s, 0);
 
   $("cdStats").innerHTML = `
     <div class="stat-card"><div class="stat-label">Projects</div><div class="stat-value">${cProjects.length}</div></div>
@@ -418,11 +433,55 @@ function openClientDetail(id) {
       }).join("")
     : `<p class="empty" style="padding:14px 0">No invoices.</p>`;
 
+  renderPortalList(id);
   renderClientActivity(id);
   $("actClientId").value = id;
   $("cdEditBtn").onclick = () => { $("clientDetailModal").hidden = true; openClientModal(c); };
   $("clientDetailModal").hidden = false;
 }
+
+function renderPortalList(clientId) {
+  const links = clientUsers.filter((cu) => cu.client_id === clientId);
+  $("portalList").innerHTML = links.length
+    ? links.map((cu) => `<div class="list-row">
+        <div class="grow">${esc(cu.email || "Portal user")}<div class="sub">has portal access</div></div>
+        <button class="btn btn-danger btn-sm" data-revoke-portal="${cu.id}">Revoke</button>
+      </div>`).join("")
+    : `<p class="empty" style="padding:10px 0">No portal logins yet.</p>`;
+}
+
+$("portalForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const clientId = $("actClientId").value;
+  const { data, error } = await sb.rpc("create_portal_user", {
+    p_client: clientId,
+    p_email: $("portalEmail").value,
+    p_password: $("portalPass").value,
+  });
+  if (error) return alert(error.message);
+  if (data?.error) return alert(data.error);
+  $("portalEmail").value = "";
+  $("portalPass").value = "";
+  notify("Portal access granted");
+  const { data: links } = await sb.from("client_users").select("*").eq("client_id", clientId);
+  clientUsers = [...clientUsers.filter((cu) => cu.client_id !== clientId), ...(links || [])];
+  renderPortalList(clientId);
+});
+
+$("portalList").addEventListener("click", async (e) => {
+  const linkId = e.target.dataset.revokePortal;
+  if (!linkId) return;
+  if (!confirm("Revoke this login's portal access?")) return;
+  const link = clientUsers.find((cu) => cu.id === linkId);
+  const { data, error } = await sb.rpc("unlink_portal_user", {
+    p_client: link.client_id,
+    p_email: link.email || "",
+  });
+  if (error) return alert(error.message);
+  if (data?.error) return alert(data.error);
+  clientUsers = clientUsers.filter((cu) => cu.id !== linkId);
+  renderPortalList(link.client_id);
+});
 
 function renderClientActivity(clientId) {
   const items = activities.filter((a) => a.client_id === clientId);
@@ -494,7 +553,9 @@ function renderProjects() {
       </div>
       <span class="badge ${p.status}">${label(p.status)}</span>
       ${p.brief ? `<p class="card-meta" style="margin-top:10px">${esc(p.brief)}</p>` : ""}
+      ${(() => { const hrs = timeEntries.filter((t) => t.project_id === p.id).reduce((s, t) => s + Number(t.hours), 0); return hrs ? `<div class="card-meta" style="margin-top:6px">${hrs}h logged</div>` : ""; })()}
       <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" data-time-project="${p.id}">Log time</button>
         ${p.client_id ? `<button class="btn btn-ghost btn-sm" data-inv-project="${p.id}">+ Invoice</button>` : ""}
         <button class="btn btn-ghost btn-sm" data-edit-project="${p.id}">Edit</button>
         <button class="btn btn-ghost btn-sm" data-del-project="${p.id}">Delete</button>
@@ -506,7 +567,9 @@ $("projectsList").addEventListener("click", async (e) => {
   const editId = e.target.dataset.editProject;
   const delId = e.target.dataset.delProject;
   const invId = e.target.dataset.invProject;
+  const timeId = e.target.dataset.timeProject;
   if (editId) openProjectModal(projects.find((p) => p.id === editId));
+  if (timeId) openTimeModal(timeId);
   if (invId) {
     const p = projects.find((x) => x.id === invId);
     openInvoiceModal(null, {
@@ -560,6 +623,33 @@ $("projectForm").addEventListener("submit", async (e) => {
     : await sb.from("projects").insert(payload);
   if (error) return alert(error.message);
   $("projectModal").hidden = true;
+  loadAll();
+});
+
+// ===== Time tracking =====
+function openTimeModal(projectId) {
+  const p = projects.find((x) => x.id === projectId);
+  if (!p) return;
+  $("timeProjectId").value = projectId;
+  $("timeDate").value = todayISO();
+  $("timeHours").value = "";
+  $("timeRate").value = settings?.default_hourly_rate || "";
+  $("timeNote").value = "";
+  $("timeModal").hidden = false;
+}
+
+$("timeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await sb.from("time_entries").insert({
+    project_id: $("timeProjectId").value,
+    entry_date: $("timeDate").value,
+    hours: Number($("timeHours").value),
+    note: $("timeNote").value.trim() || null,
+    hourly_rate: $("timeRate").value ? Number($("timeRate").value) : null,
+  });
+  if (error) return alert(error.message);
+  $("timeModal").hidden = true;
+  notify("Time logged");
   loadAll();
 });
 
@@ -798,7 +888,10 @@ function renderInvoices() {
       const t = invoiceTotals(inv);
       const ds = displayStatus(inv);
       return `<tr>
-        <td><button class="link-btn" data-edit-invoice="${inv.id}">${esc(inv.invoice_number)}</button></td>
+        <td><button class="link-btn" data-edit-invoice="${inv.id}">${esc(inv.invoice_number)}</button>
+          ${inv.doc_type === "credit_note" ? ` <span class="badge void">Credit</span>` : ""}
+          ${inv.is_recurring ? ` <span class="badge" title="Repeats ${label(inv.recur_interval)} — next ${fmtDate(inv.next_run)}">↻</span>` : ""}
+        </td>
         <td>${esc(inv.clients?.name || "—")}</td>
         <td>${fmtDate(inv.issue_date)}</td>
         <td>${fmtDate(inv.due_date)}</td>
@@ -935,12 +1028,19 @@ $("iClient").addEventListener("change", () => {
 function refreshBillableHint() {
   const hint = $("billableHint");
   pendingExpenseIds = [];
+  pendingTimeIds = [];
   const cid = $("iClient").value;
   if ($("invoiceId").value || !cid) { hint.hidden = true; return; }
   const billable = expenses.filter((e) => e.client_id === cid && e.billable && !e.invoiced);
-  if (!billable.length) { hint.hidden = true; return; }
-  const total = billable.reduce((s, e) => s + Number(e.amount), 0);
-  hint.innerHTML = `<span>${billable.length} uninvoiced billable expense${billable.length === 1 ? "" : "s"} — ${money(total)}</span>
+  const unbilledTime = timeEntries.filter((t) => t.projects?.client_id === cid && !t.invoiced);
+  if (!billable.length && !unbilledTime.length) { hint.hidden = true; return; }
+  const expTotal = billable.reduce((s, e) => s + Number(e.amount), 0);
+  const rate = settings?.default_hourly_rate || 0;
+  const timeTotal = unbilledTime.reduce((s, t) => s + Number(t.hours) * (Number(t.hourly_rate) || rate), 0);
+  const parts = [];
+  if (billable.length) parts.push(`${billable.length} expense${billable.length === 1 ? "" : "s"} (${money(expTotal)})`);
+  if (unbilledTime.length) parts.push(`${unbilledTime.reduce((s, t) => s + Number(t.hours), 0)}h unbilled time (${money(timeTotal)})`);
+  hint.innerHTML = `<span>Uninvoiced: ${parts.join(" + ")}</span>
     <button type="button" class="btn btn-ghost btn-sm" id="importBillableBtn">Import as line items</button>`;
   hint.hidden = false;
   $("importBillableBtn").addEventListener("click", () => {
@@ -949,7 +1049,13 @@ function refreshBillableHint() {
       qty: 1,
       rate: Number(e.amount),
     }));
+    unbilledTime.forEach((t) => invEditor.items.push({
+      description: `${t.projects?.title || "Work"} — ${t.note || fmtDate(t.entry_date)}`,
+      qty: Number(t.hours),
+      rate: Number(t.hourly_rate) || rate,
+    }));
     pendingExpenseIds = billable.map((e) => e.id);
+    pendingTimeIds = unbilledTime.map((t) => t.id);
     invEditor.render();
     hint.hidden = true;
   });
@@ -957,7 +1063,11 @@ function refreshBillableHint() {
 
 function openInvoiceModal(inv = null, prefill = null) {
   if (schemaMissing) return alert("Run the updated schema.sql in Supabase first — see the banner.");
-  $("invoiceModalTitle").textContent = inv ? `Invoice ${inv.invoice_number}` : "New invoice";
+  if (!inv && !prefill?.isCredit) pendingCreditNote = false;
+  const isCredit = inv?.doc_type === "credit_note" || pendingCreditNote;
+  $("invoiceModalTitle").textContent = inv
+    ? `${isCredit ? "Credit note" : "Invoice"} ${inv.invoice_number}`
+    : (pendingCreditNote ? "New credit note" : "New invoice");
   $("invoiceId").value = inv?.id || "";
   $("iClient").innerHTML = clientOptions(inv?.client_id || prefill?.clientId);
   $("iClient").dispatchEvent(new Event("change"));
@@ -968,6 +1078,9 @@ function openInvoiceModal(inv = null, prefill = null) {
   $("iVat").value = inv ? Number(inv.vat_rate) : (settings?.vat_rate ?? 0);
   $("iStatus").value = inv?.status || "draft";
   $("iNotes").value = inv?.notes || "";
+  $("iPayLink").value = inv?.payment_link || prefill?.paymentLink || settings?.payment_link || "";
+  $("iRecur").value = inv?.recur_interval || "";
+  $("iNextRun").value = inv?.next_run || "";
 
   invEditor.items = inv
     ? (inv.invoice_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate }))
@@ -980,6 +1093,9 @@ function openInvoiceModal(inv = null, prefill = null) {
   $("printInvoiceBtn").hidden = !inv;
   $("dupInvoiceBtn").hidden = !inv;
   $("emailInvoiceBtn").hidden = !inv || !inv?.clients?.email;
+  $("sendInvoiceBtn").hidden = !inv || !inv?.clients?.email;
+  $("copyLinkBtn").hidden = !inv;
+  $("creditNoteBtn").hidden = !inv || isCredit;
   if (inv) renderPaymentsList(inv);
 
   refreshBillableHint();
@@ -1022,6 +1138,7 @@ $("invoiceForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = $("invoiceId").value;
   const isNew = !id;
+  const recur = $("iRecur").value;
   const payload = {
     client_id: $("iClient").value || null,
     project_id: $("iProject").value || null,
@@ -1030,18 +1147,35 @@ $("invoiceForm").addEventListener("submit", async (e) => {
     vat_rate: Number($("iVat").value) || 0,
     status: $("iStatus").value,
     notes: $("iNotes").value.trim() || null,
+    payment_link: $("iPayLink").value.trim() || null,
+    is_recurring: !!recur,
+    recur_interval: recur || null,
+    next_run: recur ? ($("iNextRun").value || $("iDue").value || addDays(todayISO(), 30)) : null,
   };
 
   let invoiceId = id;
   if (isNew) {
-    payload.invoice_number = nextInvoiceNumber();
-    const { data, error } = await sb.from("invoices").insert(payload).select("id").single();
-    if (error) return alert(error.message);
-    invoiceId = data.id;
-    // bump invoice counter
-    if (settings) {
-      await sb.from("settings").update({ next_invoice_number: (settings.next_invoice_number || 1) + 1 }).eq("id", 1);
-      settings.next_invoice_number++;
+    payload.doc_type = pendingCreditNote ? "credit_note" : "invoice";
+    pendingCreditNote = false;
+    if (payload.doc_type === "credit_note") {
+      payload.invoice_number = nextCreditNumber();
+      const { data, error } = await sb.from("invoices").insert(payload).select("id").single();
+      if (error) return alert(error.message);
+      invoiceId = data.id;
+      if (settings) {
+        await sb.from("settings").update({ next_credit_number: (settings.next_credit_number || 1) + 1 }).eq("id", 1);
+        settings.next_credit_number++;
+      }
+    } else {
+      payload.invoice_number = nextInvoiceNumber();
+      const { data, error } = await sb.from("invoices").insert(payload).select("id").single();
+      if (error) return alert(error.message);
+      invoiceId = data.id;
+      // bump invoice counter
+      if (settings) {
+        await sb.from("settings").update({ next_invoice_number: (settings.next_invoice_number || 1) + 1 }).eq("id", 1);
+        settings.next_invoice_number++;
+      }
     }
   } else {
     const { error } = await sb.from("invoices").update(payload).eq("id", id);
@@ -1063,10 +1197,14 @@ $("invoiceForm").addEventListener("submit", async (e) => {
     if (error) return alert(error.message);
   }
 
-  // mark imported billable expenses as invoiced
+  // mark imported billable expenses / time as invoiced
   if (pendingExpenseIds.length) {
     await sb.from("expenses").update({ invoiced: true }).in("id", pendingExpenseIds);
     pendingExpenseIds = [];
+  }
+  if (pendingTimeIds.length) {
+    await sb.from("time_entries").update({ invoiced: true }).in("id", pendingTimeIds);
+    pendingTimeIds = [];
   }
 
   $("invoiceModal").hidden = true;
@@ -1128,6 +1266,7 @@ $("printQuoteBtn").addEventListener("click", () => {
 
 function printDocument(doc, kind) {
   const isQuote = kind === "quote";
+  const isCredit = !isQuote && doc.doc_type === "credit_note";
   const number = isQuote ? doc.quote_number : doc.invoice_number;
   const items = isQuote ? doc.quote_items : doc.invoice_items;
   const t = itemsTotals(items, doc.vat_rate);
@@ -1154,6 +1293,7 @@ function printDocument(doc, kind) {
       <p><strong>Name:</strong> ${esc(s.account_name || "Gedker Ltd")}</p>
       ${s.sort_code ? `<p><strong>Sort Code:</strong> ${esc(s.sort_code)}</p>` : ""}
       ${s.account_number ? `<p><strong>Account:</strong> ${esc(s.account_number)}</p>` : ""}
+      ${(doc.payment_link || s.payment_link) ? `<p><strong>Pay online:</strong> ${esc(doc.payment_link || s.payment_link)}</p>` : ""}
       <p><strong>Reference:</strong> ${esc(number)}</p>
     </div>` : "";
 
@@ -1196,7 +1336,7 @@ function printDocument(doc, kind) {
   <div class="letterhead-meta">hello@wizzz.co.uk<br>wizzz.co.uk<br>A trading name of Gedker Ltd</div>
 </div>
 ${stampStatuses.includes(ds) ? `<div class="stamp">${ds.toUpperCase()}</div>` : ""}
-<div class="invoice-title">${kind.toUpperCase()}</div>
+<div class="invoice-title">${isCredit ? "CREDIT NOTE" : kind.toUpperCase()}</div>
 <div class="parties">
   <div class="party"><div class="party-label">From</div><strong>WIZZZ</strong><br>A trading name of Gedker Ltd<br>hello@wizzz.co.uk<br>wizzz.co.uk</div>
   <div class="party"><div class="party-label">Bill To</div><strong>${esc(client.name || "—")}</strong><br>${esc(client.company || "")}<br>${esc(client.address || "").replace(/\n/g, "<br>")}<br>${esc(client.email || "")}</div>
@@ -1243,11 +1383,14 @@ function emailDoc(doc, kind) {
   const dateLine = isQuote
     ? `valid until ${fmtDate(doc.valid_until)}`
     : `due ${fmtDate(doc.due_date)}`;
+  const linkLine = (!isQuote && doc.public_token)
+    ? `\n\nView and pay online:\nhttps://wizzz.co.uk/invoice.html?t=${doc.public_token}`
+    : "";
   const bank = (!isQuote && (s.bank_name || s.account_number))
     ? `\n\nPayment details:\nBank: ${s.bank_name || ""}\nName: ${s.account_name || "Gedker Ltd"}\nSort code: ${s.sort_code || ""}\nAccount: ${s.account_number || ""}\nReference: ${number}`
     : "";
   const subject = `${isQuote ? "Quote" : "Invoice"} ${number} from WIZZZ`;
-  const body = `Hi ${client.name || "there"},\n\nPlease find ${isQuote ? "quote" : "invoice"} ${number} attached — ${money(t.total)}, ${dateLine}.${bank}\n\nThanks,\nWIZZZ\nhello@wizzz.co.uk · wizzz.co.uk`;
+  const body = `Hi ${client.name || "there"},\n\nPlease find ${isQuote ? "quote" : "invoice"} ${number} attached — ${money(t.total)}, ${dateLine}.${linkLine}${bank}\n\nThanks,\nWIZZZ\nhello@wizzz.co.uk · wizzz.co.uk`;
   window.location.href = `mailto:${client.email || ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -1258,6 +1401,50 @@ $("emailInvoiceBtn").addEventListener("click", () => {
 $("emailQuoteBtn").addEventListener("click", () => {
   const q = quotes.find((x) => x.id === $("quoteId").value);
   if (q) emailDoc(q, "quote");
+});
+
+// ===== Send via Resend, public link, credit note =====
+$("sendInvoiceBtn").addEventListener("click", async () => {
+  const invId = $("invoiceId").value;
+  const inv = invoices.find((i) => i.id === invId);
+  if (!inv) return;
+  if (!confirm(`Email ${inv.invoice_number} to ${inv.clients?.email || "the client"}?`)) return;
+  $("sendInvoiceBtn").disabled = true;
+  const { data, error } = await sb.rpc("send_invoice_email", { p_invoice_id: invId });
+  $("sendInvoiceBtn").disabled = false;
+  if (error) return alert(error.message);
+  if (data?.error) return alert(data.error);
+  notify(`Invoice emailed to ${inv.clients.email}`);
+  loadAll();
+});
+
+$("copyLinkBtn").addEventListener("click", async () => {
+  const inv = invoices.find((i) => i.id === $("invoiceId").value);
+  if (!inv) return;
+  const url = `https://wizzz.co.uk/invoice.html?t=${inv.public_token}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    notify("Public invoice link copied");
+  } catch {
+    prompt("Copy this link:", url);
+  }
+});
+
+$("creditNoteBtn").addEventListener("click", () => {
+  const inv = invoices.find((i) => i.id === $("invoiceId").value);
+  if (!inv) return;
+  if (!confirm(`Create a credit note against ${inv.invoice_number}?`)) return;
+  $("invoiceModal").hidden = true;
+  pendingCreditNote = true;
+  openInvoiceModal(null, {
+    clientId: inv.client_id,
+    projectId: inv.project_id,
+    isCredit: true,
+    items: (inv.invoice_items || []).map((it) => ({ description: it.description, qty: it.qty, rate: it.rate })),
+  });
+  $("iVat").value = Number(inv.vat_rate);
+  $("iNotes").value = `Credit for ${inv.invoice_number}` + (inv.notes ? `\n${inv.notes}` : "");
+  invEditor.render();
 });
 
 // ===== Duplicate invoice (retainers) =====
@@ -1351,7 +1538,7 @@ function printStatement(client) {
 $("backupBtn").addEventListener("click", () => {
   const data = {
     exported_at: new Date().toISOString(),
-    clients, projects, invoices, quotes, expenses, tasks, activities, settings,
+    clients, projects, invoices, quotes, expenses, tasks, activities, time_entries: timeEntries, settings,
   };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -1560,6 +1747,12 @@ function renderSettings() {
   $("sNextNum").value = s.next_invoice_number ?? 1;
   $("sQPrefix").value = s.quote_prefix ?? "Q-";
   $("sQNext").value = s.next_quote_number ?? 1;
+  $("sCPrefix").value = s.credit_prefix ?? "CN-";
+  $("sCNext").value = s.next_credit_number ?? 1;
+  $("sHourly").value = s.default_hourly_rate ?? "";
+  $("sResendKey").value = s.resend_api_key || "";
+  $("sResendFrom").value = s.resend_from || "";
+  $("sPayLink").value = s.payment_link || "";
   $("sTerms").value = s.payment_terms_days ?? 14;
   $("sVat").value = s.vat_rate ?? 20;
   $("sBank").value = s.bank_name || "";
@@ -1578,6 +1771,12 @@ $("settingsForm").addEventListener("submit", async (e) => {
     next_invoice_number: Number($("sNextNum").value) || 1,
     quote_prefix: $("sQPrefix").value.trim() || "Q-",
     next_quote_number: Number($("sQNext").value) || 1,
+    credit_prefix: $("sCPrefix").value.trim() || "CN-",
+    next_credit_number: Number($("sCNext").value) || 1,
+    default_hourly_rate: $("sHourly").value ? Number($("sHourly").value) : 0,
+    resend_api_key: $("sResendKey").value.trim() || null,
+    resend_from: $("sResendFrom").value.trim() || null,
+    payment_link: $("sPayLink").value.trim() || null,
     payment_terms_days: Number($("sTerms").value) || 14,
     vat_rate: Number($("sVat").value) || 0,
     bank_name: $("sBank").value.trim() || null,

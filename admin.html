@@ -183,8 +183,17 @@
             <label><span>Next invoice number</span><input type="number" id="sNextNum" min="1" /></label>
             <label><span>Quote prefix</span><input type="text" id="sQPrefix" placeholder="Q-" /></label>
             <label><span>Next quote number</span><input type="number" id="sQNext" min="1" /></label>
+            <label><span>Credit note prefix</span><input type="text" id="sCPrefix" placeholder="CN-" /></label>
+            <label><span>Next credit note number</span><input type="number" id="sCNext" min="1" /></label>
             <label><span>Payment terms (days)</span><input type="number" id="sTerms" min="0" /></label>
             <label><span>Default VAT rate (%)</span><input type="number" id="sVat" min="0" step="0.1" /></label>
+            <label><span>Default hourly rate (£)</span><input type="number" id="sHourly" min="0" step="5" /></label>
+          </div>
+          <h3 class="section-title">Email &amp; online payment</h3>
+          <div class="form-grid">
+            <label><span>Resend API key</span><input type="password" id="sResendKey" placeholder="re_…" autocomplete="off" /></label>
+            <label><span>Send from</span><input type="text" id="sResendFrom" placeholder="WIZZZ &lt;billing@wizzz.co.uk&gt;" /></label>
+            <label><span>Default payment link</span><input type="url" id="sPayLink" placeholder="https://buy.stripe.com/…" /></label>
           </div>
           <h3 class="section-title">Payment details (shown on invoices)</h3>
           <div class="form-grid">
@@ -291,6 +300,16 @@
               <option value="void">Void</option>
             </select>
           </label>
+          <label><span>Payment link</span><input type="url" id="iPayLink" placeholder="https://buy.stripe.com/…" /></label>
+          <label><span>Repeats</span>
+            <select id="iRecur">
+              <option value="">No</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </label>
+          <label><span>Next run</span><input type="date" id="iNextRun" /></label>
         </div>
 
         <div class="items-head">
@@ -314,6 +333,9 @@
         </div>
 
         <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="sendInvoiceBtn" hidden>Send email</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="copyLinkBtn" hidden>Copy link</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="creditNoteBtn" hidden>Credit note</button>
           <button type="button" class="btn btn-ghost btn-sm" id="emailInvoiceBtn" hidden>Email</button>
           <button type="button" class="btn btn-ghost btn-sm" id="dupInvoiceBtn" hidden>Duplicate</button>
           <button type="button" class="btn btn-ghost btn-sm" id="printInvoiceBtn">Print / PDF</button>
@@ -404,6 +426,17 @@
       <h4 class="section-title">Invoices</h4>
       <div id="cdInvoices" class="list"></div>
 
+      <h4 class="section-title">Portal access</h4>
+      <div id="cdPortal" class="portal-block">
+        <div id="portalList" class="list"></div>
+        <form id="portalForm" class="activity-form">
+          <input type="email" id="portalEmail" placeholder="client@email.com" required />
+          <input type="password" id="portalPass" placeholder="temp password" minlength="8" required />
+          <button type="submit" class="btn btn-primary btn-sm">Grant access</button>
+        </form>
+        <p class="muted" style="font-size:12px;margin:4px 0 0">Client signs in at wizzz.co.uk/portal.html to see their projects and invoices.</p>
+      </div>
+
       <h4 class="section-title">Activity</h4>
       <div id="cdActivity" class="timeline"></div>
       <form id="activityForm" class="activity-form">
@@ -476,6 +509,24 @@
           <span>Billable to a client</span>
         </label>
         <label><span>Client (if billable)</span><select id="eClient"></select></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TIME ENTRY MODAL -->
+  <div id="timeModal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 class="modal-title">Log time</h3>
+      <form id="timeForm" class="modal-form">
+        <input type="hidden" id="timeProjectId" />
+        <label><span>Date</span><input type="date" id="timeDate" required /></label>
+        <label><span>Hours</span><input type="number" id="timeHours" min="0.25" step="0.25" required /></label>
+        <label><span>Hourly rate (£)</span><input type="number" id="timeRate" min="0" step="5" /></label>
+        <label><span>Note</span><input type="text" id="timeNote" placeholder="What was done…" /></label>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm">Save</button>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Client Portal · WIZZZ</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/png" href="brand-pack/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root { --ink:#0a0604; --paper:#fff7f2; --muted:#a89a90; --ember:#ffb347; --flame:#ff8a00; --orange:#ff4d00; --red:#d6141f; --card:#160d08; --line:#2a1d12; }
+    body { font-family:"Space Grotesk",sans-serif; background:var(--ink); color:var(--paper); min-height:100vh; }
+    a { color:var(--flame); }
+    .wrap { max-width:860px; margin:0 auto; padding:32px 20px 64px; }
+    .brand { font-family:"Metamorphous",serif; font-size:34px; letter-spacing:4px; background:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f); -webkit-background-clip:text; background-clip:text; color:transparent; display:inline-block; }
+    .sub { color:var(--muted); font-size:13px; }
+    .login-card { max-width:400px; margin:14vh auto; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:36px; }
+    .login-card .brand { font-size:30px; margin-bottom:4px; }
+    h1 { font-family:"Metamorphous",serif; font-weight:400; font-size:22px; margin:24px 0 4px; }
+    h2 { font-family:"Metamorphous",serif; font-weight:400; font-size:15px; color:var(--ember); text-transform:uppercase; letter-spacing:2px; margin:28px 0 10px; }
+    label { display:block; margin-bottom:14px; font-size:13px; color:var(--muted); }
+    input { width:100%; margin-top:5px; padding:11px 13px; background:var(--ink); border:1px solid var(--line); border-radius:9px; color:var(--paper); font:inherit; }
+    input:focus { outline:none; border-color:var(--flame); }
+    button { font:inherit; cursor:pointer; }
+    .btn { padding:11px 20px; border:none; border-radius:9px; font-weight:600; background:linear-gradient(90deg,#ff8a00,#ff4d00); color:#fff; }
+    .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--paper); padding:7px 14px; border-radius:8px; font-size:13px; }
+    .btn-ghost:hover { border-color:var(--flame); color:var(--ember); }
+    .err { color:#ff7b6b; font-size:13px; margin-top:8px; }
+    .head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+    .card .t { font-weight:600; }
+    .badge { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:3px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
+    .badge.paid, .badge.done, .badge.accepted { color:#4ade80; border-color:#4ade80; }
+    .badge.sent, .badge.in_progress { color:var(--ember); border-color:var(--ember); }
+    .badge.overdue { color:#ff7b6b; border-color:var(--red); }
+    .badge.void, .badge.declined { color:var(--muted); }
+    .badge.planning, .badge.review, .badge.draft { color:var(--muted); }
+    .amount { font-weight:700; }
+    .amount.due { color:var(--ember); }
+    .row-end { display:flex; align-items:center; gap:10px; }
+    .empty { color:var(--muted); font-size:14px; padding:8px 0; }
+    .meta { color:var(--muted); font-size:12px; margin-top:3px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="loginView" hidden>
+      <div class="login-card">
+        <span class="brand">WIZZZ</span>
+        <p class="sub">Client portal</p>
+        <h1>Sign in</h1>
+        <form id="loginForm" style="margin-top:18px">
+          <label>Email<input type="email" id="email" required autocomplete="email" /></label>
+          <label>Password<input type="password" id="password" required autocomplete="current-password" /></label>
+          <button type="submit" class="btn" style="width:100%">Sign in</button>
+          <p class="err" id="loginError" hidden></p>
+          <p class="sub" style="margin-top:14px">No account? Ask WIZZZ to grant you portal access.</p>
+        </form>
+      </div>
+    </div>
+
+    <div id="appView" hidden>
+      <div class="head">
+        <div>
+          <span class="brand">WIZZZ</span>
+          <h1 id="clientName"></h1>
+          <p class="sub" id="clientCompany"></p>
+        </div>
+        <button class="btn-ghost" id="logoutBtn">Sign out</button>
+      </div>
+
+      <h2>Projects</h2>
+      <div id="projectsList"></div>
+
+      <h2>Invoices</h2>
+      <div id="invoicesList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
+    const sb = createClient(
+      "https://mphfclfaotvpdywconld.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waGZjbGZhb3R2cGR5d2NvbmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDY1ODgsImV4cCI6MjEwNTA4MjU4OH0.3Fdn3yvHYjADvEbbPWzHXIrIL23acAbW_F5XYfCxm7Y"
+    );
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => s == null ? "" : String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+    const money = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(n) || 0);
+    const fmtDate = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+    const label = (s) => (s || "").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    const todayISO = () => new Date().toISOString().slice(0, 10);
+
+    $("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("loginError").hidden = true;
+      const { error } = await sb.auth.signInWithPassword({
+        email: $("email").value.trim(),
+        password: $("password").value,
+      });
+      if (error) {
+        $("loginError").textContent = error.message;
+        $("loginError").hidden = false;
+        return;
+      }
+      init();
+    });
+
+    $("logoutBtn").addEventListener("click", async () => {
+      await sb.auth.signOut();
+      $("appView").hidden = true;
+      $("loginView").hidden = false;
+    });
+
+    function invStatus(inv, balance) {
+      if (inv.status === "sent" && balance > 0 && inv.due_date && inv.due_date < todayISO()) return "overdue";
+      return inv.status;
+    }
+
+    async function init() {
+      const { data: links } = await sb.from("client_users").select("client_id");
+      if (!links?.length) {
+        $("appView").hidden = false;
+        $("clientName").textContent = "No client account linked yet";
+        $("clientCompany").textContent = "Ask WIZZZ to link your login to your client record.";
+        return;
+      }
+      const clientIds = links.map((l) => l.client_id);
+      const [{ data: cs }, { data: projs }, { data: invs }] = await Promise.all([
+        sb.from("clients").select("*").in("id", clientIds),
+        sb.from("projects").select("*").order("created_at", { ascending: false }),
+        sb.from("invoices").select("*, invoice_items(*), payments(*)").order("issue_date", { ascending: false }),
+      ]);
+      const client = (cs || [])[0];
+      if (client) {
+        $("clientName").textContent = client.name;
+        $("clientCompany").textContent = client.company || "";
+      }
+
+      $("projectsList").innerHTML = (projs || []).length
+        ? projs.map((p) => `<div class="card">
+            <div><div class="t">${esc(p.title)}</div><div class="meta">${p.type ? label(p.type) + " · " : ""}${p.due_date ? "Due " + fmtDate(p.due_date) : "No due date"}</div></div>
+            <span class="badge ${p.status}">${label(p.status)}</span>
+          </div>`).join("")
+        : `<p class="empty">No projects yet.</p>`;
+
+      $("invoicesList").innerHTML = (invs || []).length
+        ? invs.map((inv) => {
+            const total = (inv.invoice_items || []).reduce((s, it) => s + it.qty * it.rate, 0) * (1 + (Number(inv.vat_rate) || 0) / 100);
+            const paid = (inv.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+            const balance = total - paid;
+            const st = invStatus(inv, balance);
+            return `<div class="card">
+              <div><div class="t">${esc(inv.invoice_number)}${inv.doc_type === "credit_note" ? ' <span class="badge void">Credit</span>' : ""}</div>
+                <div class="meta">Issued ${fmtDate(inv.issue_date)}${inv.due_date ? " · Due " + fmtDate(inv.due_date) : ""}</div></div>
+              <div class="row-end">
+                <span class="amount ${balance > 0 && st !== "void" ? "due" : ""}">${money(balance > 0 ? balance : total)}</span>
+                <span class="badge ${st}">${label(st)}</span>
+                <a class="btn-ghost" href="invoice.html?t=${inv.public_token}" target="_blank" rel="noopener">View</a>
+              </div>
+            </div>`;
+          }).join("")
+        : `<p class="empty">No invoices yet.</p>`;
+
+      $("appView").hidden = false;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) init();
+    else $("loginView").hidden = false;
+  </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invoice · WIZZZ</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/png" href="brand-pack/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:"Space Grotesk",sans-serif; color:#0a0604; background:#0a0604; padding:32px 16px; min-height:100vh; }
+    .doc { max-width:760px; margin:0 auto; background:#fff; padding:48px 56px; border-radius:16px; line-height:1.6; }
+    .letterhead { display:flex; align-items:center; justify-content:space-between; padding-bottom:24px; border-bottom:3px solid; border-image:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f) 1; margin-bottom:32px; }
+    .letterhead-logo { font-family:"Metamorphous",serif; font-size:36px; letter-spacing:4px; background:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .letterhead-meta { text-align:right; font-size:12px; color:#666; }
+    .doc-title { font-family:"Metamorphous",serif; font-size:28px; color:#ff4d00; margin-bottom:24px; }
+    .stamp { float:right; font-family:"Metamorphous",serif; font-size:20px; border:2px solid currentColor; padding:4px 14px; border-radius:8px; transform:rotate(-4deg); }
+    .stamp.paid { color:#1d9e57; } .stamp.void, .stamp.overdue { color:#d6141f; }
+    .parties { display:flex; justify-content:space-between; gap:24px; margin-bottom:32px; font-size:13px; flex-wrap:wrap; }
+    .party-label { font-family:"Metamorphous",serif; font-size:11px; color:#ff4d00; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+    .invoice-meta { display:flex; gap:40px; margin-bottom:32px; font-size:13px; padding:16px 20px; background:#fff7f2; border-left:3px solid #ff4d00; flex-wrap:wrap; }
+    .invoice-meta strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#999; font-weight:600; }
+    .invoice-meta span { font-size:15px; font-weight:600; }
+    table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:24px; }
+    th { text-align:left; padding:12px; border-bottom:2px solid #ff4d00; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+    th.right, td.right { text-align:right; }
+    td { padding:14px 12px; border-bottom:1px solid #eee; }
+    .totals { width:280px; margin-left:auto; font-size:14px; }
+    .totals td { padding:8px 12px; border:none; }
+    .totals .subtotal-row td { border-top:1px solid #eee; }
+    .totals .vat-row td { color:#666; }
+    .totals .total-row td { border-top:2px solid #ff4d00; border-bottom:2px solid #ff4d00; font-family:"Metamorphous",serif; font-size:18px; padding:14px 12px; }
+    .payment { margin-top:32px; padding:20px; background:#fff7f2; border-left:3px solid #ff4d00; font-size:13px; }
+    .payment h3 { font-family:"Metamorphous",serif; font-size:14px; color:#ff4d00; margin-bottom:8px; }
+    .payment p { margin-bottom:4px; }
+    .pay-btn { display:inline-block; margin-top:14px; padding:14px 32px; background:linear-gradient(90deg,#ff8a00,#ff4d00); color:#fff; font-weight:700; font-size:16px; text-decoration:none; border-radius:10px; }
+    .notes { margin-top:24px; font-size:12px; color:#999; line-height:1.7; white-space:pre-line; }
+    .footer { margin-top:40px; padding-top:16px; border-top:1px solid #eee; font-size:11px; color:#999; text-align:center; }
+    .error { max-width:480px; margin:20vh auto; text-align:center; color:#fff7f2; }
+    .error h1 { font-family:"Metamorphous",serif; font-size:24px; margin-bottom:12px; background:linear-gradient(90deg,#ffb347,#ff8a00,#ff4d00,#d6141f); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    @media (max-width:640px) { .doc { padding:32px 22px; } }
+    @media print { body { background:#fff; padding:0; } .doc { border-radius:0; padding:20px; } .pay-btn { display:none; } }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="error"><h1>Loading…</h1></div></div>
+  <script>
+    const SUPA_URL = "https://mphfclfaotvpdywconld.supabase.co";
+    const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1waGZjbGZhb3R2cGR5d2NvbmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDY1ODgsImV4cCI6MjEwNTA4MjU4OH0.3Fdn3yvHYjADvEbbPWzHXIrIL23acAbW_F5XYfCxm7Y";
+    const esc = (s) => s == null ? "" : String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+    const money = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(n) || 0);
+    const fmtDate = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—";
+    const label = (s) => (s || "").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
+    function fail(msg) {
+      document.getElementById("app").innerHTML =
+        `<div class="error"><h1>WIZZZ</h1><p>${esc(msg)}</p></div>`;
+    }
+
+    (async () => {
+      const tok = new URLSearchParams(location.search).get("t");
+      if (!tok) return fail("This link is missing its invoice token.");
+      const res = await fetch(`${SUPA_URL}/rest/v1/rpc/get_public_invoice`, {
+        method: "POST",
+        headers: { apikey: SUPA_KEY, Authorization: "Bearer " + SUPA_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ tok }),
+      });
+      const inv = await res.json().catch(() => null);
+      if (!inv || !inv.invoice_number) return fail("Invoice not found — check the link or ask hello@wizzz.co.uk.");
+
+      const isCredit = inv.doc_type === "credit_note";
+      const subtotal = (inv.items || []).reduce((s, it) => s + it.qty * it.rate, 0);
+      const vat = subtotal * (Number(inv.vat_rate) || 0) / 100;
+      const total = subtotal + vat;
+      const paid = Number(inv.paid) || 0;
+      const balance = total - paid;
+      const today = new Date().toISOString().slice(0, 10);
+      const overdue = !isCredit && inv.status === "sent" && balance > 0 && inv.due_date && inv.due_date < today;
+      const stamp = inv.status === "paid" ? "PAID" : inv.status === "void" ? "VOID" : overdue ? "OVERDUE" : "";
+      const b = inv.business || {};
+      const payLink = inv.payment_link || b.payment_link;
+
+      const itemRows = (inv.items || []).map((it) =>
+        `<tr><td>${esc(it.description)}</td><td class="right">${it.qty}</td><td class="right">${money(it.rate)}</td><td class="right">${money(it.qty * it.rate)}</td></tr>`).join("");
+
+      const paidRows = paid > 0
+        ? `<tr class="vat-row"><td>Paid</td><td class="right">−${money(paid)}</td></tr>
+           <tr class="total-row"><td>${balance > 0 ? "Balance Due" : "Total"}</td><td class="right">${money(Math.max(balance, 0))}</td></tr>`
+        : `<tr class="total-row"><td>${isCredit ? "Total Credited" : "Total Due"}</td><td class="right">${money(total)}</td></tr>`;
+
+      document.title = `${inv.invoice_number} · WIZZZ`;
+      document.getElementById("app").innerHTML = `
+        <div class="doc">
+          <div class="letterhead">
+            <div class="letterhead-logo">WIZZZ</div>
+            <div class="letterhead-meta">${esc(b.email || "hello@wizzz.co.uk")}<br>${esc(b.web || "wizzz.co.uk")}<br>${esc(b.legal || "")}</div>
+          </div>
+          ${stamp ? `<div class="stamp ${stamp.toLowerCase()}">${stamp}</div>` : ""}
+          <div class="doc-title">${isCredit ? "CREDIT NOTE" : "INVOICE"}</div>
+          <div class="parties">
+            <div class="party"><div class="party-label">From</div><strong>WIZZZ</strong><br>${esc(b.legal || "A trading name of Gedker Ltd")}<br>${esc(b.email || "")}</div>
+            <div class="party"><div class="party-label">Bill To</div><strong>${esc(inv.client_name || "—")}</strong><br>${esc(inv.client_company || "")}<br>${esc(inv.client_address || "").replace(/\n/g, "<br>")}</div>
+          </div>
+          <div class="invoice-meta">
+            <div><strong>${isCredit ? "Credit No." : "Invoice No."}</strong><span>${esc(inv.invoice_number)}</span></div>
+            <div><strong>Issue Date</strong><span>${fmtDate(inv.issue_date)}</span></div>
+            ${isCredit ? "" : `<div><strong>Due Date</strong><span>${fmtDate(inv.due_date)}</span></div>`}
+          </div>
+          <table>
+            <tr><th>Description</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr>
+            ${itemRows}
+          </table>
+          <table class="totals">
+            <tr class="subtotal-row"><td>Subtotal</td><td class="right">${money(subtotal)}</td></tr>
+            ${Number(inv.vat_rate) ? `<tr class="vat-row"><td>VAT (${Number(inv.vat_rate)}%)</td><td class="right">${money(vat)}</td></tr>` : ""}
+            ${paidRows}
+          </table>
+          ${!isCredit && (b.bank_name || b.account_number || payLink) ? `
+          <div class="payment">
+            <h3>Payment Details</h3>
+            ${b.bank_name ? `<p><strong>Bank:</strong> ${esc(b.bank_name)}</p>` : ""}
+            ${b.account_name ? `<p><strong>Name:</strong> ${esc(b.account_name)}</p>` : ""}
+            ${b.sort_code ? `<p><strong>Sort Code:</strong> ${esc(b.sort_code)}</p>` : ""}
+            ${b.account_number ? `<p><strong>Account:</strong> ${esc(b.account_number)}</p>` : ""}
+            <p><strong>Reference:</strong> ${esc(inv.invoice_number)}</p>
+            ${payLink && balance > 0 ? `<a class="pay-btn" href="${esc(payLink)}" target="_blank" rel="noopener">Pay ${money(balance)} now</a>` : ""}
+          </div>` : ""}
+          ${inv.notes ? `<div class="notes">${esc(inv.notes)}</div>` : ""}
+          <div class="footer">WIZZZ · ${esc(b.legal || "A trading name of Gedker Ltd")} · ${esc(b.email || "hello@wizzz.co.uk")} · ${esc(b.web || "wizzz.co.uk")}</div>
+        </div>`;
+    })();
+  </script>
+</body>
+</html>

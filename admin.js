@@ -581,7 +581,7 @@ function renderProjectsBoard() {
 
 let dragProjId = null;
 $("projectsBoard").addEventListener("dragstart", (e) => {
-  dragProjId = e.target.dataset.projId;
+  dragProjId = e.target.closest(".kanban-card")?.dataset.projId || null;
 });
 $("projectsBoard").addEventListener("dragover", (e) => {
   const col = e.target.closest(".kanban-col");
@@ -679,6 +679,7 @@ function openQuoteModal(q = null, prefillClientId = null) {
   quoteEditor.render();
 
   $("printQuoteBtn").hidden = !q;
+  $("emailQuoteBtn").hidden = !q || !q?.clients?.email;
   $("convertQuoteBtn").hidden = !q || q.status === "accepted";
   $("quoteModal").hidden = false;
 }

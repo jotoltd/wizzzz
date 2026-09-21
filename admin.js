@@ -75,7 +75,7 @@ async function loadAll() {
   const [c, p, inv, ex, st] = await Promise.all([
     sb.from("clients").select("*").order("created_at", { ascending: false }),
     sb.from("projects").select("*, clients(name)").order("created_at", { ascending: false }),
-    sb.from("invoices").select("*, clients(name,company), invoice_items(*), payments(*)").order("created_at", { ascending: false }),
+    sb.from("invoices").select("*, clients(name,company,email,address), invoice_items(*), payments(*)").order("created_at", { ascending: false }),
     sb.from("expenses").select("*, clients(name)").order("incurred_on", { ascending: false }),
     sb.from("settings").select("*").eq("id", 1).maybeSingle(),
   ]);
@@ -89,6 +89,12 @@ async function loadAll() {
   invoices = inv.error ? [] : inv.data || [];
   expenses = ex.error ? [] : ex.data || [];
   settings = st.data || null;
+
+  // bootstrap the settings row if it's missing, so invoice numbering always increments
+  if (!st.error && !settings) {
+    const { data } = await sb.from("settings").upsert({ id: 1 }).select().single();
+    settings = data || null;
+  }
 
   invoices.forEach((i) => {
     (i.invoice_items || []).sort((a, b) => a.sort - b.sort);
@@ -465,6 +471,12 @@ $("addItemBtn").addEventListener("click", () => {
 
 $("iVat").addEventListener("input", updateInvoiceTotals);
 
+// keep due date in step with issue date on new invoices
+$("iIssue").addEventListener("change", () => {
+  if ($("invoiceId").value) return; // only for new invoices
+  $("iDue").value = addDays($("iIssue").value, settings?.payment_terms_days ?? 14);
+});
+
 $("iClient").addEventListener("change", () => {
   // re-filter project dropdown to selected client
   const cid = $("iClient").value;
@@ -522,6 +534,11 @@ $("paymentsList").addEventListener("click", async (e) => {
   const { error } = await sb.from("payments").delete().eq("id", id);
   if (error) return alert(error.message);
   const invId = $("invoiceId").value;
+  // reopen the invoice if it was marked paid but now has a balance again
+  const { data: fresh } = await sb.from("invoices").select("*, invoice_items(*), payments(*)").eq("id", invId).single();
+  if (fresh && fresh.status === "paid" && invoiceTotals(fresh).balance > 0.005) {
+    await sb.from("invoices").update({ status: "sent" }).eq("id", invId);
+  }
   await loadAll();
   const inv = invoices.find((i) => i.id === invId);
   if (inv) renderPaymentsList(inv);
@@ -607,7 +624,7 @@ $("paymentForm").addEventListener("submit", async (e) => {
   const { data: fresh } = await sb.from("invoices").select("*, invoice_items(*), payments(*)").eq("id", invoiceId).single();
   if (fresh) {
     const t = invoiceTotals(fresh);
-    if (t.balance <= 0.005 && fresh.status !== "paid") {
+    if (t.balance <= 0.005 && fresh.status !== "paid" && fresh.status !== "void") {
       await sb.from("invoices").update({ status: "paid" }).eq("id", invoiceId);
     }
   }
@@ -714,8 +731,10 @@ ${bankBlock}
   if (!win) return alert("Popup blocked — allow popups to print invoices.");
   win.document.write(html);
   win.document.close();
-  win.onload = () => win.print();
-  setTimeout(() => win.print(), 600);
+  let printed = false;
+  const doPrint = () => { if (!printed) { printed = true; win.print(); } };
+  win.onload = doPrint;
+  setTimeout(doPrint, 600);
 }
 
 // ===== Expenses =====
@@ -840,7 +859,9 @@ document.querySelectorAll(".modal").forEach((m) =>
   m.addEventListener("click", (e) => { if (e.target === m) m.hidden = true; })
 );
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") document.querySelectorAll(".modal").forEach((m) => m.hidden = true);
+  if (e.key !== "Escape") return;
+  const open = [...document.querySelectorAll(".modal")].filter((m) => !m.hidden);
+  if (open.length) open[open.length - 1].hidden = true; // close only the topmost modal
 });
 
 // ===== Helpers =====

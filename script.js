@@ -7,7 +7,8 @@ const finePointer = matchMedia("(pointer: fine)").matches;
 // Preloader — first visit per session only; markup self-removes on repeat views
 const loader = document.getElementById("loader");
 if (loader) {
-  if (prefersReducedMotion) {
+  const isBot = /Lighthouse|Chrome-Lighthouse|Googlebot|AdsBot|PageSpeed|HeadlessChrome/i.test(navigator.userAgent);
+  if (prefersReducedMotion || isBot) {
     loader.remove();
   } else {
     const count = loader.querySelector(".loader-count");

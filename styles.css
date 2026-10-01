@@ -422,6 +422,8 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
 
 /* ===== Hero ===== */
 .hero {
+  position: relative;
+  overflow: hidden;
   min-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -492,6 +494,16 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
   49% { filter: brightness(1.1); }
   70% { filter: brightness(1.05); }
 }
+
+.fluid-hero {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
 
 .hero-sub {
   font-size: clamp(1rem, 1.8vw, 1.2rem);

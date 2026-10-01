@@ -198,12 +198,12 @@ void main(){
                 fbm(vec3(p + q * 2.4 + vec2(8.3, 2.8), t * 1.2)));
   float f = fbm(vec3(p + r * 2.6, t * 1.3));
 
-  vec3 col = mix(vec3(0.05, 0.01, 0.0), vec3(0.65, 0.12, 0.02), clamp(f * f * 3.0, 0.0, 1.0));
+  vec3 col = mix(vec3(0.14, 0.03, 0.01), vec3(0.7, 0.14, 0.02), clamp(f * f * 3.0, 0.0, 1.0));
   col = mix(col, vec3(1.0, 0.45, 0.06), clamp(length(r) * 0.9, 0.0, 1.0));
   col = mix(col, vec3(1.0, 0.8, 0.3), clamp(q.y * q.y * 2.2, 0.0, 1.0) * 0.5);
   col += vec3(1.0, 0.5, 0.12) * stir * 0.4;
 
-  float a = clamp(f * 1.5 + stir * 0.35, 0.0, 0.95);
+  float a = clamp(f * 1.5 + 0.28 + stir * 0.35, 0.0, 0.95);
   gl_FragColor = vec4(col, a);
 }`;
 

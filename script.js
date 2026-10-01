@@ -138,7 +138,7 @@ if (heroSec && !prefersReducedMotion) {
   }, { passive: true });
 }
 
-// ===== Liquid hero — raymarched metaballs (WebGL) =====
+// ===== Liquid hero — domain-warped flowing silk (WebGL) =====
 const fluidCanvas = document.getElementById("fluidHero");
 if (fluidCanvas) initFluidHero(fluidCanvas);
 
@@ -181,63 +181,30 @@ float fbm(vec3 p){
   return v;
 }
 
-// Teardrop SDF — round base pinching to a wavy tip, leaning toward the cursor
-float map(vec3 p){
-  vec3 q = p - vec3(0.0, 0.18, 0.0);
-  q.x -= uLead.x * (q.y + 0.6) * 0.5 + uLead.x * 0.15;
-  float taper = smoothstep(-0.4, 1.5, q.y);
-  q.x *= 1.0 + taper * 1.7;
-  q.z *= 1.0 + taper * 1.7;
-  q.y *= 0.72;
-  float d = length(q) - (0.9 + 0.05 * sin(uTime * 7.0));
-  // turbulence: stretched vertically, scrolling upward like rising flame
-  float n = fbm(p * vec3(3.0, 1.8, 3.0) + vec3(0.0, -uTime * 3.2, 0.0));
-  d += (n - 0.5) * (0.12 + taper * 0.6);
-  return d;
-}
-
 void main(){
   vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
-  vec3 ro = vec3(0.0, 0.0, 2.7);
-  vec3 rd = normalize(vec3(uv, -1.7));
-  float t = 0.0;
-  float minD = 1e9;
-  bool hit = false;
-  vec3 p = ro;
-  for (int i = 0; i < 72; i++) {
-    p = ro + rd * t;
-    float d = map(p);
-    minD = min(minD, d);
-    if (d < 0.0012) { hit = true; break; }
-    t += max(d * 0.8, 0.01);
-    if (t > 9.0) break;
-  }
+  float t = uTime * 0.09;
 
-  if (!hit) {
-    // soft fiery halo just outside the silhouette
-    float glow = smoothstep(0.26, 0.0, minD);
-    gl_FragColor = vec4(vec3(1.0, 0.5, 0.1) * glow, glow * 0.6);
-    return;
-  }
+  // cursor stirs the flow — rotational warp + glow around the pointer
+  vec2 m = uLead;
+  float md = length(uv - m);
+  float stir = smoothstep(0.9, 0.0, md);
+  vec2 circ = vec2(-(uv.y - m.y), uv.x - m.x);
+  vec2 p = uv * 1.3 + circ * stir * 0.55;
 
-  // walk inward, accumulating density — turbulent core structure
-  float dens = 0.0;
-  vec3 pp = p + rd * 0.05;
-  for (int j = 0; j < 10; j++) {
-    dens += clamp(-map(pp), 0.0, 1.0);
-    pp += rd * 0.06;
-  }
-  float heat = dens * 0.5;
+  // domain-warped fbm — silk/molten-flow look (fbm of fbm of fbm)
+  vec2 q = vec2(fbm(vec3(p, t)), fbm(vec3(p + 5.2, t * 1.1)));
+  vec2 r = vec2(fbm(vec3(p + q * 2.4 + vec2(1.7, 9.2), t * 1.4)),
+                fbm(vec3(p + q * 2.4 + vec2(8.3, 2.8), t * 1.2)));
+  float f = fbm(vec3(p + r * 2.6, t * 1.3));
 
-  vec3 col = vec3(0.95, 0.20, 0.03);
-  col = mix(col, vec3(1.0, 0.45, 0.05), smoothstep(0.0, 0.3, heat));
-  col = mix(col, vec3(1.0, 0.78, 0.18), smoothstep(0.25, 0.65, heat));
-  col = mix(col, vec3(1.0, 0.98, 0.85), smoothstep(0.6, 0.95, heat));
-  // cool blue at the flame base, like a match
-  col = mix(vec3(0.3, 0.55, 1.0), col, smoothstep(-1.05, -0.55, p.y));
+  vec3 col = mix(vec3(0.05, 0.01, 0.0), vec3(0.65, 0.12, 0.02), clamp(f * f * 3.0, 0.0, 1.0));
+  col = mix(col, vec3(1.0, 0.45, 0.06), clamp(length(r) * 0.9, 0.0, 1.0));
+  col = mix(col, vec3(1.0, 0.8, 0.3), clamp(q.y * q.y * 2.2, 0.0, 1.0) * 0.5);
+  col += vec3(1.0, 0.5, 0.12) * stir * 0.4;
 
-  float edge = smoothstep(0.004, -0.003, map(p));
-  gl_FragColor = vec4(col, edge);
+  float a = clamp(f * 1.5 + stir * 0.35, 0.0, 0.95);
+  gl_FragColor = vec4(col, a);
 }`;
 
   const compile = (type, src) => {
@@ -282,7 +249,7 @@ void main(){
   resize();
   addEventListener("resize", resize);
 
-  // Lead blob: chases cursor while it's moving, drifts back to orbit when idle
+  // Stir point: chases cursor while it's moving, drifts back to orbit when idle
   let lx = 0, ly = 0, tx = 0, ty = 0, lastMove = -1e9;
   const orbit0 = (t) => [Math.cos(t * 0.22) * 0.9, Math.sin(t * 0.1826) * 0.9 * 0.6];
   addEventListener("mousemove", (e) => {

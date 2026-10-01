@@ -123,14 +123,17 @@ if (nav) {
   }, { passive: true });
 }
 
-// Hero parallax — content drifts up and fades as it leaves the viewport
+// Hero parallax — content drifts up and fades as it leaves the viewport;
+// the flame lags much harder so it rides the scroll down with you
 const heroSec = document.querySelector(".hero, .service-hero");
+const fluidCv = document.getElementById("fluidHero");
 if (heroSec && !prefersReducedMotion) {
   addEventListener("scroll", () => {
     const y = scrollY;
     if (y < innerHeight * 1.2) {
       heroSec.style.transform = `translateY(${y * 0.22}px)`;
       heroSec.style.opacity = String(1 - y / (innerHeight * 1.1));
+      if (fluidCv) fluidCv.style.transform = `translateY(${y * 0.55}px)`;
     }
   }, { passive: true });
 }
@@ -212,8 +215,8 @@ void main(){
 
   if (!hit) {
     // soft fiery halo just outside the silhouette
-    float glow = smoothstep(0.22, 0.0, minD);
-    gl_FragColor = vec4(vec3(1.0, 0.45, 0.08) * glow, glow * 0.55);
+    float glow = smoothstep(0.26, 0.0, minD);
+    gl_FragColor = vec4(vec3(1.0, 0.5, 0.1) * glow, glow * 0.6);
     return;
   }
 
@@ -224,14 +227,14 @@ void main(){
     dens += clamp(-map(pp), 0.0, 1.0);
     pp += rd * 0.06;
   }
-  float heat = dens * 0.38;
+  float heat = dens * 0.5;
 
-  vec3 col = vec3(0.30, 0.02, 0.0);
-  col = mix(col, vec3(1.0, 0.30, 0.02), smoothstep(0.0, 0.35, heat));
-  col = mix(col, vec3(1.0, 0.75, 0.15), smoothstep(0.3, 0.7, heat));
-  col = mix(col, vec3(1.0, 0.97, 0.80), smoothstep(0.65, 1.0, heat));
+  vec3 col = vec3(0.95, 0.20, 0.03);
+  col = mix(col, vec3(1.0, 0.45, 0.05), smoothstep(0.0, 0.3, heat));
+  col = mix(col, vec3(1.0, 0.78, 0.18), smoothstep(0.25, 0.65, heat));
+  col = mix(col, vec3(1.0, 0.98, 0.85), smoothstep(0.6, 0.95, heat));
   // cool blue at the flame base, like a match
-  col = mix(vec3(0.15, 0.4, 1.0) * 0.85, col, smoothstep(-1.05, -0.55, p.y));
+  col = mix(vec3(0.3, 0.55, 1.0), col, smoothstep(-1.05, -0.55, p.y));
 
   float edge = smoothstep(0.004, -0.003, map(p));
   gl_FragColor = vec4(col, edge);

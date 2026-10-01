@@ -64,6 +64,15 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -121,7 +130,7 @@
     <section class="service-hero">
       <div class="service-hero-num">WEBSITE + SHOP</div>
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">THE SLIME STUDIO</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">THE SLIME STUDIO</span></span>
       </h1>
       <p class="hero-sub reveal">A site and online shop for a hands-on slime-making studio in Holt, Norfolk. I built the whole thing: workshop session booking with a live calendar, a full shop with cart and Stripe checkout for DIY kits, handmade slimes and accessories, party bookings, a gallery, and contact. Supabase handles auth and data, Stripe takes the payments, all on Next.js with server-side rendering for fast loads and SEO.</p>
       <div class="hero-actions reveal">

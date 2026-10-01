@@ -64,6 +64,15 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -121,7 +130,7 @@
     <section class="service-hero">
       <div class="service-hero-num">WEBSITE</div>
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">CITYSAFE LOCKSMITH</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">CITYSAFE LOCKSMITH</span></span>
       </h1>
       <p class="hero-sub reveal">A 24/7 emergency locksmith site for London. I built the whole thing: emergency call-to-action with click-to-call and WhatsApp, service pages for lockouts, lock changes, repairs, UPVC doors, windows, safes, auto and commercial work, a quote form, areas covered map, reviews, and a gallery. Built to convert visitors into calls fast, with a mobile-first layout for people locked out on their phone.</p>
       <div class="hero-actions reveal">

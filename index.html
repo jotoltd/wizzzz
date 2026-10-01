@@ -104,6 +104,15 @@
 <body id="top">
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -158,9 +167,9 @@
     <!-- HERO -->
     <section class="hero">
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">WE BUILD</span>
-        <span class="line gradient-text hero-anim" style="--d:1">BIG THINGS</span>
-        <span class="line hero-anim" style="--d:2">THAT MOVE.</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">WE BUILD</span></span>
+        <span class="line-mask"><span class="line gradient-text hero-anim" style="--d:1">BIG THINGS</span></span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:2">THAT MOVE.</span></span>
       </h1>
       <p class="hero-sub reveal">
         Website design. iOS apps. Ad campaigns. Built end to end by one person

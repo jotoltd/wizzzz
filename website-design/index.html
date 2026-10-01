@@ -68,6 +68,15 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -125,8 +134,8 @@
     <section class="service-hero">
       <div class="service-hero-num">01</div>
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">WEBSITE</span>
-        <span class="line gradient-text hero-anim" style="--d:1">DESIGN</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">WEBSITE</span></span>
+        <span class="line-mask"><span class="line gradient-text hero-anim" style="--d:1">DESIGN</span></span>
       </h1>
       <p class="hero-sub reveal">
         Bold, fast, conversion-focused website design — built end to end by one person.

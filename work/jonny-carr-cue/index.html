@@ -64,6 +64,15 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -121,7 +130,7 @@
     <section class="service-hero">
       <div class="service-hero-num">RAFFLE PLATFORM</div>
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">JONNY CARR CUE</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">JONNY CARR CUE</span></span>
       </h1>
       <p class="hero-sub reveal">A raffle platform for a custom handmade snooker and pool cue maker. I built the whole thing: ticket purchases with PayPal, user accounts and auth, live draw and winner selection, a product gallery of the cues up for grabs, an about the maker story, session and event bookings, reviews, and contact. Supabase handles auth and data, Resend does the email, all wrapped in a clean, craft-led design with a handwritten display font.</p>
       <div class="hero-actions reveal">

@@ -1,6 +1,42 @@
 // Mark JS as active so reveal animations hide elements only when JS can reveal them
 document.documentElement.classList.add("js");
 
+const prefersReducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const finePointer = matchMedia("(pointer: fine)").matches;
+
+// Preloader — first visit per session only; markup self-removes on repeat views
+const loader = document.getElementById("loader");
+if (loader) {
+  if (prefersReducedMotion) {
+    loader.remove();
+  } else {
+    const count = loader.querySelector(".loader-count");
+    const fill = loader.querySelector(".loader-fill");
+    let p = 0, done = false;
+    const tick = setInterval(() => {
+      p = Math.min(p + Math.random() * 14 + 6, 92);
+      if (count) count.textContent = Math.floor(p);
+      if (fill) fill.style.width = p + "%";
+    }, 90);
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearInterval(tick);
+      if (count) count.textContent = "100";
+      if (fill) fill.style.width = "100%";
+      loader.classList.add("loader-done");
+      sessionStorage.setItem("wz_l", "1");
+      setTimeout(() => loader.remove(), 800);
+    };
+    const minWait = new Promise((r) => setTimeout(r, 700));
+    const loaded = new Promise((r) =>
+      document.readyState === "complete" ? r() : addEventListener("load", r)
+    );
+    Promise.all([minWait, loaded]).then(finish);
+    setTimeout(finish, 3000);
+  }
+}
+
 // Scroll progress bar
 const scrollProgress = document.getElementById("scrollProgress");
 if (scrollProgress) {
@@ -74,3 +110,39 @@ document.querySelectorAll(".work-card").forEach((card) => {
     card.style.setProperty("--my", `${e.clientY - r.top}px`);
   });
 });
+
+// Nav: tuck away scrolling down, return scrolling up
+const nav = document.querySelector(".nav");
+if (nav) {
+  let lastY = 0;
+  addEventListener("scroll", () => {
+    const y = scrollY;
+    nav.classList.toggle("nav-hidden", y > lastY && y > 140);
+    lastY = y;
+  }, { passive: true });
+}
+
+// Hero parallax — content drifts up and fades as it leaves the viewport
+const heroSec = document.querySelector(".hero, .service-hero");
+if (heroSec && !prefersReducedMotion) {
+  addEventListener("scroll", () => {
+    const y = scrollY;
+    if (y < innerHeight * 1.2) {
+      heroSec.style.transform = `translateY(${y * 0.22}px)`;
+      heroSec.style.opacity = String(1 - y / (innerHeight * 1.1));
+    }
+  }, { passive: true });
+}
+
+// Magnetic CTAs — subtle pull toward the cursor
+if (!prefersReducedMotion && finePointer) {
+  document.querySelectorAll(".btn-primary, .nav-cta").forEach((btn) => {
+    btn.addEventListener("mousemove", (e) => {
+      const r = btn.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height / 2);
+      btn.style.transform = `translate(${dx * 0.22}px, ${dy * 0.22}px)`;
+    });
+    btn.addEventListener("mouseleave", () => { btn.style.transform = ""; });
+  });
+}

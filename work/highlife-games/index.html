@@ -64,6 +64,15 @@
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
 
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <img src="/logo.svg" alt="" class="loader-logo" />
+      <div class="loader-bar"><span class="loader-fill"></span></div>
+    </div>
+    <div class="loader-count">0</div>
+  </div>
+  <script>if(sessionStorage.getItem("wz_l")){var l=document.getElementById("loader");l&&l.remove()}</script>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -121,7 +130,7 @@
     <section class="service-hero">
       <div class="service-hero-num">WEBSITE + GAME</div>
       <h1 class="hero-title">
-        <span class="line hero-anim" style="--d:0">HIGHLIFE GAMES</span>
+        <span class="line-mask"><span class="line hero-anim" style="--d:0">HIGHLIFE GAMES</span></span>
       </h1>
       <p class="hero-sub reveal">A coming-soon site for an interactive educational quiz game with real prizes. I built the landing page, the auth flow with login and signup, a referral system, an animated canvas background, how-to-play and asset category sections, an advertisers section, FAQs, and a contact form. Supabase handles auth and data, Resend does transactional email, and Square is wired up for prizes. Ages 14+.</p>
       <div class="hero-actions reveal">

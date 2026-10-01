@@ -31,6 +31,17 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
+/* ===== Interaction states ===== */
+html { -webkit-tap-highlight-color: rgba(255, 138, 0, 0.18); }
+:focus-visible {
+  outline: 2px solid var(--flame);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+section[id], main[id] { scroll-margin-top: 90px; }
+
 /* ===== Animated gradient backdrop ===== */
 .bg {
   position: fixed;
@@ -241,7 +252,16 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
 }
+.nav-item-dropdown:hover .nav-dropdown a,
+.nav-item-dropdown:focus-within .nav-dropdown a { opacity: 1; transform: none; }
+.nav-item-dropdown:hover .nav-dropdown a:nth-child(2),
+.nav-item-dropdown:focus-within .nav-dropdown a:nth-child(2) { transition-delay: 0.04s; }
+.nav-item-dropdown:hover .nav-dropdown a:nth-child(3),
+.nav-item-dropdown:focus-within .nav-dropdown a:nth-child(3) { transition-delay: 0.08s; }
 .nav-dropdown a:hover { background: rgba(255, 138, 0, 0.12); }
 
 .nav-cta {
@@ -521,8 +541,13 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
   color: var(--paper);
 }
 .btn-ghost:hover { background: rgba(255, 247, 242, 0.06); transform: translateY(-3px); }
+.btn:active, .nav-cta:active { transform: translateY(-1px) scale(0.97); }
 
 .btn-big { font-size: 1.3rem; padding: 22px 40px; margin-top: 8px; }
+
+/* Arrow nudge on link hover */
+.arr { display: inline-block; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+a:hover .arr { transform: translateX(4px); }
 
 /* ===== Marquee ===== */
 .marquee {
@@ -695,7 +720,10 @@ a.card { display: block; }
   object-fit: cover; object-position: top;
   display: block;
   filter: saturate(1.05);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+a.work-card:hover .work-card-shot img { transform: scale(1.05); }
+a.work-card:active, a.card:active { transform: translateY(-2px) scale(0.99); }
 .work-card-body { padding: 24px; }
 .work-card-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
@@ -825,6 +853,8 @@ a.card { display: block; }
   transition: color 0.2s ease;
 }
 .footer-nav a:hover { color: var(--flame); }
+.nav-links > a:active, .nav-dropdown a:active, .footer-nav a:active,
+.mobile-link:active { opacity: 0.6; }
 
 /* ===== Reveal animation ===== */
 /* Hidden only when JS is active; visible by default so text always shows. */
@@ -836,6 +866,20 @@ a.card { display: block; }
 .js .reveal.in {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ===== View transitions (MPA page fades) ===== */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) {
+    animation-duration: 0.22s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .nav { view-transition-name: site-nav; }
 }
 
 /* ===== Responsive ===== */

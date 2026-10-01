@@ -135,15 +135,49 @@ if (heroSec && !prefersReducedMotion) {
   }, { passive: true });
 }
 
-// Magnetic CTAs — subtle pull toward the cursor
+// Magnetic CTAs — subtle pull toward the cursor.
+// Uses the `translate` property (not `transform`) so :active press states still compose.
 if (!prefersReducedMotion && finePointer) {
   document.querySelectorAll(".btn-primary, .nav-cta").forEach((btn) => {
     btn.addEventListener("mousemove", (e) => {
       const r = btn.getBoundingClientRect();
       const dx = e.clientX - (r.left + r.width / 2);
       const dy = e.clientY - (r.top + r.height / 2);
-      btn.style.transform = `translate(${dx * 0.22}px, ${dy * 0.22}px)`;
+      btn.style.translate = `${dx * 0.22}px ${dy * 0.22}px`;
     });
-    btn.addEventListener("mouseleave", () => { btn.style.transform = ""; });
+    btn.addEventListener("mouseleave", () => { btn.style.translate = ""; });
   });
 }
+
+// Escape blurs the focused Services trigger, closing the dropdown
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.activeElement?.closest(".nav-item-dropdown")) {
+    document.activeElement.blur();
+  }
+});
+
+// FAQ accordion — smooth height animation on <details>
+document.querySelectorAll(".faq-item").forEach((item) => {
+  const summary = item.querySelector("summary");
+  const panel = item.querySelector("p");
+  if (!summary || !panel) return;
+  summary.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (prefersReducedMotion) { item.open = !item.open; return; }
+    panel.style.overflow = "hidden";
+    if (item.open) {
+      const h = panel.offsetHeight;
+      panel.animate(
+        [{ height: h + "px", opacity: 1 }, { height: "0px", opacity: 0 }],
+        { duration: 240, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }
+      ).onfinish = () => { item.open = false; panel.style.overflow = ""; };
+    } else {
+      item.open = true;
+      const h = panel.offsetHeight;
+      panel.animate(
+        [{ height: "0px", opacity: 0 }, { height: h + "px", opacity: 1 }],
+        { duration: 280, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+      ).onfinish = () => { panel.style.overflow = ""; };
+    }
+  });
+});

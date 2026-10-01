@@ -49,9 +49,9 @@
       "@type": "OfferCatalog",
       "name": "Services",
       "itemListElement": [
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Website design" } },
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "iOS app development" } },
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Advertising campaigns" } }
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Website design", "url": "https://wizzz.co.uk/website-design" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "iOS app development", "url": "https://wizzz.co.uk/ios-apps" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Advertising campaigns", "url": "https://wizzz.co.uk/ads" } }
       ]
     },
     "priceRange": "££"
@@ -101,7 +101,9 @@
   <link rel="icon" href="favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 </head>
-<body>
+<body id="top">
+  <a href="#main" class="skip-link">Skip to content</a>
+
   <!-- animated gradient backdrop -->
   <div class="bg" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -117,8 +119,16 @@
   <header class="nav">
     <a href="#top" class="nav-logo"><img src="logo.svg" alt="WIZZZ" class="logo-img" /></a>
     <nav class="nav-links">
-      <a href="#services">Services</a>
+      <div class="nav-item-dropdown">
+        <a href="#services">Services <span class="nav-caret" aria-hidden="true">▾</span></a>
+        <div class="nav-dropdown">
+          <a href="/website-design">Website Design</a>
+          <a href="/ios-apps">iOS Apps</a>
+          <a href="/ads">Ad Campaigns</a>
+        </div>
+      </div>
       <a href="#about">About</a>
+      <a href="/work">Work</a>
       <a href="#faq">FAQ</a>
       <a href="#contact">Contact</a>
     </nav>
@@ -133,14 +143,18 @@
     <div class="mobile-menu-flame"></div>
     <nav class="mobile-menu-links">
       <a href="#services" class="mobile-link">Services</a>
+      <a href="/website-design" class="mobile-link mobile-link-sub">Website Design</a>
+      <a href="/ios-apps" class="mobile-link mobile-link-sub">iOS Apps</a>
+      <a href="/ads" class="mobile-link mobile-link-sub">Ad Campaigns</a>
       <a href="#about" class="mobile-link">About</a>
+      <a href="/work" class="mobile-link">Work</a>
       <a href="#faq" class="mobile-link">FAQ</a>
       <a href="#contact" class="mobile-link">Contact</a>
       <a href="#contact" class="mobile-link mobile-link-cta">Start a project</a>
     </nav>
   </div>
 
-  <main id="top">
+  <main id="main">
     <!-- HERO -->
     <section class="hero">
       <h1 class="hero-title">
@@ -180,7 +194,7 @@
     <section class="services" id="services">
       <h2 class="section-title reveal">WEBSITE DESIGN, APPS & ADS</h2>
       <div class="cards">
-        <article class="card reveal">
+        <a href="/website-design" class="card reveal">
           <div class="card-num">01</div>
           <h3 class="card-title">Website Design</h3>
           <p class="card-desc">
@@ -193,8 +207,9 @@
             <li>Motion & interaction</li>
             <li>Speed & SEO obsessed</li>
           </ul>
-        </article>
-        <article class="card reveal">
+          <span class="card-link">Learn more →</span>
+        </a>
+        <a href="/ios-apps" class="card reveal">
           <div class="card-num">02</div>
           <h3 class="card-title">iOS Apps</h3>
           <p class="card-desc">
@@ -206,8 +221,9 @@
             <li>App Store launch</li>
             <li>Ongoing iteration</li>
           </ul>
-        </article>
-        <article class="card reveal">
+          <span class="card-link">Learn more →</span>
+        </a>
+        <a href="/ads" class="card reveal">
           <div class="card-num">03</div>
           <h3 class="card-title">Ads</h3>
           <p class="card-desc">
@@ -219,7 +235,8 @@
             <li>Meta / Google / TikTok</li>
             <li>Performance tracking</li>
           </ul>
-        </article>
+          <span class="card-link">Learn more →</span>
+        </a>
       </div>
     </section>
 
@@ -245,9 +262,9 @@
       <h2 class="section-title reveal">WHAT I'VE BUILT</h2>
       <div class="work-grid">
 
-        <article class="work-card reveal">
+        <a href="/work/pitter-potter" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/pitterpotter.png" alt="Pitter Potter website" loading="lazy" />
+            <img src="/screenshots/pitterpotter.png" alt="Pitter Potter website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -277,15 +294,13 @@
               <span>React</span><span>Vite</span><span>Supabase</span>
               <span>Framer Motion</span><span>Vercel</span>
             </div>
-            <a href="https://www.pitterpotter.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/jm2-tiling" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/jm2tiling.png" alt="JM² Tiling Co website" loading="lazy" />
+            <img src="/screenshots/jm2tiling.png" alt="JM² Tiling Co website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -313,15 +328,13 @@
               <span>React</span><span>Vite</span><span>Framer Motion</span>
               <span>Vercel</span>
             </div>
-            <a href="https://www.jm2tilingco.com" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/monkeying-around" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/monkeyingaround.png" alt="Monkeying Around website" loading="lazy" />
+            <img src="/screenshots/monkeyingaround.png" alt="Monkeying Around website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -349,15 +362,13 @@
               <span>React</span><span>Vite</span><span>Framer Motion</span>
               <span>Google Maps</span><span>Vercel</span>
             </div>
-            <a href="https://www.monkeyingaround.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/lrso" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/lrso.png" alt="LRSO website" loading="lazy" />
+            <img src="/screenshots/lrso.png" alt="LRSO website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -386,15 +397,13 @@
               <span>React</span><span>Vite</span><span>Supabase</span>
               <span>Framer Motion</span><span>Resend</span><span>Vercel</span>
             </div>
-            <a href="https://www.lrso.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/the-slime-studio" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/theslimestudio.png" alt="The Slime Studio website" loading="lazy" />
+            <img src="/screenshots/theslimestudio.png" alt="The Slime Studio website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -423,15 +432,13 @@
               <span>Next.js</span><span>React</span><span>Supabase</span>
               <span>Stripe</span><span>Vercel</span>
             </div>
-            <a href="https://www.theslimestudio.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/citysafe-locksmith" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/citysafelocksmith.png" alt="Citysafe Locksmith website" loading="lazy" />
+            <img src="/screenshots/citysafelocksmith.png" alt="Citysafe Locksmith website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -461,15 +468,13 @@
               <span>React</span><span>Vite</span><span>Framer Motion</span>
               <span>Vercel</span>
             </div>
-            <a href="https://www.citysafelocksmith.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/highlife-games" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/highlifegames.png" alt="Highlife Games website" loading="lazy" />
+            <img src="/screenshots/highlifegames.png" alt="Highlife Games website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -499,15 +504,13 @@
               <span>Vanilla JS</span><span>Supabase</span><span>Resend</span>
               <span>Square</span><span>Canvas API</span><span>Vercel</span>
             </div>
-            <a href="https://www.highlifegames.com" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/higher-heights-roofing" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/higherheights.png" alt="Higher Heights Roofing website" loading="lazy" />
+            <img src="/screenshots/higherheights.png" alt="Higher Heights Roofing website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -537,15 +540,13 @@
               <span>React 19</span><span>Tailwind</span><span>Supabase</span>
               <span>Lucide</span><span>Netlify</span>
             </div>
-            <a href="https://higherheightsroofing.co.uk" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
-        <article class="work-card reveal">
+        <a href="/work/jonny-carr-cue" class="work-card reveal">
           <div class="work-card-shot">
-            <img src="screenshots/jonnycarrcue.png" alt="Jonny Carr Cue website" loading="lazy" />
+            <img src="/screenshots/jonnycarrcue.png" alt="Jonny Carr Cue website" loading="lazy" />
           </div>
           <div class="work-card-body">
             <div class="work-card-head">
@@ -576,11 +577,9 @@
               <span>React</span><span>Vite</span><span>Supabase</span>
               <span>PayPal</span><span>Resend</span><span>Vercel</span>
             </div>
-            <a href="https://www.jonnycarrcue.com" target="_blank" rel="noopener" class="work-link">
-              Visit site →
-            </a>
+            <span class="work-link">Case study →</span>
           </div>
-        </article>
+        </a>
 
       </div>
     </section>
@@ -626,9 +625,17 @@
 
   <footer class="footer">
     <div class="footer-left"><img src="logo.svg" alt="WIZZZ" class="logo-img" /></div>
+    <nav class="footer-nav" aria-label="Footer">
+      <a href="/website-design">Website Design</a>
+      <a href="/ios-apps">iOS Apps</a>
+      <a href="/ads">Ad Campaigns</a>
+      <a href="/work">Work</a>
+      <a href="/#contact">Contact</a>
+      <a href="/portal">Client portal</a>
+    </nav>
     <div class="footer-right">© <span id="year"></span> WIZZZ · Website design, iOS apps & ads<br><span class="footer-trading">A trading name of Gedker Ltd</span></div>
   </footer>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

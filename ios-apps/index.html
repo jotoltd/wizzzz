@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iOS App Development · WIZZZ</title>
+  <meta name="description" content="Native-feeling iOS apps from WIZZZ — a one-man UK agency. Swift, SwiftUI, App Store launch and ongoing iteration. Polished interfaces, smooth gestures, built to last." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://wizzz.co.uk/ios-apps" />
+  <meta name="theme-color" content="#0a0604" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="WIZZZ" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:title" content="iOS App Development · WIZZZ" />
+  <meta property="og:description" content="Native-feeling iOS apps from WIZZZ. Swift, SwiftUI, App Store launch and ongoing iteration." />
+  <meta property="og:image" content="https://wizzz.co.uk/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://wizzz.co.uk/ios-apps" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="iOS App Development · WIZZZ" />
+  <meta name="twitter:description" content="Native-feeling iOS apps from WIZZZ. Swift, SwiftUI, App Store launch and ongoing iteration." />
+  <meta name="twitter:image" content="https://wizzz.co.uk/og-image.png" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "iOS App Development",
+    "provider": {
+      "@type": "ProfessionalService",
+      "name": "WIZZZ",
+      "legalName": "Gedker Ltd",
+      "url": "https://wizzz.co.uk"
+    },
+    "description": "Native-feeling iOS apps — Swift, SwiftUI, App Store launch and ongoing iteration.",
+    "areaServed": "GB",
+    "url": "https://wizzz.co.uk/ios-apps"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://wizzz.co.uk/" },
+      { "@type": "ListItem", "position": 2, "name": "iOS Apps", "item": "https://wizzz.co.uk/ios-apps" }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- animated gradient backdrop -->
+  <div class="bg" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- nav -->
+  <header class="nav">
+    <a href="/" class="nav-logo"><img src="/logo.svg" alt="WIZZZ" class="logo-img" /></a>
+    <nav class="nav-links">
+      <div class="nav-item-dropdown">
+        <a href="/#services">Services <span class="nav-caret" aria-hidden="true">▾</span></a>
+        <div class="nav-dropdown">
+          <a href="/website-design">Website Design</a>
+          <a href="/ios-apps">iOS Apps</a>
+          <a href="/ads">Ad Campaigns</a>
+        </div>
+      </div>
+      <a href="/#about">About</a>
+      <a href="/work">Work</a>
+      <a href="/#faq">FAQ</a>
+      <a href="/#contact">Contact</a>
+    </nav>
+    <a href="/#contact" class="nav-cta">Start a project</a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- mobile menu -->
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <div class="mobile-menu-flame"></div>
+    <nav class="mobile-menu-links">
+      <a href="/#services" class="mobile-link">Services</a>
+      <a href="/website-design" class="mobile-link mobile-link-sub">Website Design</a>
+      <a href="/ios-apps" class="mobile-link mobile-link-sub">iOS Apps</a>
+      <a href="/ads" class="mobile-link mobile-link-sub">Ad Campaigns</a>
+      <a href="/#about" class="mobile-link">About</a>
+      <a href="/work" class="mobile-link">Work</a>
+      <a href="/#faq" class="mobile-link">FAQ</a>
+      <a href="/#contact" class="mobile-link">Contact</a>
+      <a href="/#contact" class="mobile-link mobile-link-cta">Start a project</a>
+    </nav>
+  </div>
+
+  <main id="main">
+    <!-- BREADCRUMB -->
+    <nav class="breadcrumb reveal" aria-label="Breadcrumb">
+      <a href="/">Home</a> <span class="breadcrumb-sep">/</span> <span>iOS Apps</span>
+    </nav>
+
+    <!-- HERO -->
+    <section class="service-hero">
+      <div class="service-hero-num">02</div>
+      <h1 class="hero-title">
+        <span class="line hero-anim" style="--d:0">iOS</span>
+        <span class="line gradient-text hero-anim" style="--d:1">APPS</span>
+      </h1>
+      <p class="hero-sub reveal">
+        Native-feeling iOS apps that ship to the App Store. Polished interfaces,
+        smooth gestures, and architecture built to last — designed and developed
+        by one person, end to end.
+      </p>
+      <div class="hero-actions reveal">
+        <a href="/#contact" class="btn btn-primary">Start a project</a>
+        <a href="#detail" class="btn btn-ghost">What's included →</a>
+      </div>
+    </section>
+
+    <!-- WHAT YOU GET -->
+    <section class="service-detail" id="detail">
+      <h2 class="section-title reveal">WHAT YOU GET</h2>
+      <div class="detail-grid">
+        <div class="detail-card reveal">
+          <h3 class="detail-title">Swift & SwiftUI</h3>
+          <p class="detail-desc">
+            Built with Apple's latest frameworks. Native performance, native
+            animations, native feel. No cross-platform compromises — your app
+            will feel like it belongs on iOS.
+          </p>
+        </div>
+        <div class="detail-card reveal">
+          <h3 class="detail-title">Polished UI</h3>
+          <p class="detail-desc">
+            Every screen, every transition, every micro-interaction is designed
+            to feel right. The kind of polish that makes users trust your app
+            before they've even used it.
+          </p>
+        </div>
+        <div class="detail-card reveal">
+          <h3 class="detail-title">App Store Launch</h3>
+          <p class="detail-desc">
+            I handle the full App Store submission — screenshots, descriptions,
+            keywords, privacy policy, review process. You get a live app without
+            the headache.
+          </p>
+        </div>
+        <div class="detail-card reveal">
+          <h3 class="detail-title">Backend & API</h3>
+          <p class="detail-desc">
+            Need user accounts, data sync, push notifications, or payments?
+            I build the backend too — typically with Supabase, Firebase, or a
+            custom API, whatever fits best.
+          </p>
+        </div>
+        <div class="detail-card reveal">
+          <h3 class="detail-title">Ongoing Iteration</h3>
+          <p class="detail-desc">
+            Apps aren't built-and-forget. I offer ongoing development — new
+            features, bug fixes, OS updates, analytics. Your app keeps getting
+            better after launch.
+          </p>
+        </div>
+        <div class="detail-card reveal">
+          <h3 class="detail-title">One Person, Full Stack</h3>
+          <p class="detail-desc">
+            Design, frontend, backend, App Store — it's all me. No handoffs
+            between designers and developers. One person who understands the
+            whole picture.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="service-process">
+      <h2 class="section-title reveal">HOW IT WORKS</h2>
+      <div class="process-steps">
+        <div class="process-step reveal">
+          <div class="process-num">01</div>
+          <h3>Discovery & Scope</h3>
+          <p>We work through what the app needs to do, who it's for, and the features that matter most. I'll map out the screens and give you a quote.</p>
+        </div>
+        <div class="process-step reveal">
+          <div class="process-num">02</div>
+          <h3>Design & Build</h3>
+          <p>I design the UI and build it in parallel — native Swift/SwiftUI, not mockups that need translating. You see real progress on a real device.</p>
+        </div>
+        <div class="process-step reveal">
+          <div class="process-num">03</div>
+          <h3>TestFlight & Launch</h3>
+          <p>Beta testing via TestFlight, then full App Store submission. I handle the whole review process, assets, and listing so you're live without the pain.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <h2 class="section-title reveal">iOS APP FAQ</h2>
+      <div class="faq-list">
+        <details class="faq-item reveal">
+          <summary>How much does an iOS app cost?</summary>
+          <p>It depends on complexity. A focused utility app costs a lot less than a full social platform with real-time features. Tell me what you need and I'll give you an honest quote — no padding, no surprises.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>How long does it take to build an app?</summary>
+          <p>A simple app can be ready in four to six weeks. More complex apps with backend, payments, and integrations typically take two to four months. You'll see real builds along the way.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Do you build Android apps too?</summary>
+          <p>My focus is iOS — Swift and SwiftUI. If you need both platforms, I can advise on cross-platform options, but my strength is building native iOS apps that feel right.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>What about the Apple Developer account?</summary>
+          <p>You'll need an Apple Developer account (£79/year). I can help you set it up if you don't have one, or publish under my account if that's simpler for your situation.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Can you add features to my existing app?</summary>
+          <p>Yes — whether it's new features, a redesign, or fixing bugs in an existing Swift codebase, I can pick it up and improve it.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CONTACT CTA -->
+    <section class="contact" id="contact">
+      <h2 class="contact-title gradient-text reveal">GOT AN APP IDEA?</h2>
+      <p class="contact-sub reveal">
+        Tell me what you're thinking and I'll come back with a plan and a quote.
+      </p>
+      <a href="mailto:hello@wizzz.co.uk" class="btn btn-primary btn-big reveal">
+        hello@wizzz.co.uk
+      </a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-left"><img src="/logo.svg" alt="WIZZZ" class="logo-img" /></div>
+    <nav class="footer-nav" aria-label="Footer">
+      <a href="/website-design">Website Design</a>
+      <a href="/ios-apps">iOS Apps</a>
+      <a href="/ads">Ad Campaigns</a>
+      <a href="/work">Work</a>
+      <a href="/#contact">Contact</a>
+      <a href="/portal">Client portal</a>
+    </nav>
+    <div class="footer-right">© <span id="year"></span> WIZZZ · Website design, iOS apps & ads<br><span class="footer-trading">A trading name of Gedker Ltd</span></div>
+  </footer>
+
+  <script type="module" src="/script.js"></script>
+</body>
+</html>

@@ -495,14 +495,6 @@ section { padding: clamp(80px, 12vh, 140px) 0; }
   70% { filter: brightness(1.05); }
 }
 
-.fluid-hero {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
 .hero > * { position: relative; z-index: 1; }
 
 .hero-sub {
